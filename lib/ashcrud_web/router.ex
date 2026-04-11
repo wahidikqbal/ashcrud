@@ -42,6 +42,12 @@ defmodule AshcrudWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    
+    live "/posts", PostLive.Index, :index
+    live "/posts/new", PostLive.Form, :new
+    live "/posts/:id/edit", PostLive.Form, :edit
+    live "/posts/:id", PostLive.Show, :show
+    live "/posts/:id/show/edit", PostLive.Show, :edit
     auth_routes AuthController, Ashcrud.Accounts.User, path: "/auth"
     sign_out_route AuthController
 
