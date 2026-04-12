@@ -36,12 +36,28 @@ defmodule AshcrudWeb.Router do
       # If an authenticated user must *not* be present:
       # on_mount {AshcrudWeb.LiveUserAuth, :live_no_user}
 
+
+      # LiveView Category Routes
       live "/categories", CategoryLive.Index, :index
       live "/categories/new", CategoryLive.Form, :new
       live "/categories/:id/edit", CategoryLive.Form, :edit
-  
       live "/categories/:id", CategoryLive.Show, :show
       live "/categories/:id/show/edit", CategoryLive.Show, :edit
+
+      # LiveView Material Routes
+      live "/materials", MaterialLive.Index, :index
+      live "/materials/new", MaterialLive.Form, :new
+      live "/materials/:id/edit", MaterialLive.Form, :edit
+      live "/materials/:id", MaterialLive.Show, :show
+      live "/materials/:id/show/edit", MaterialLive.Show, :edit
+
+      # LiveView Item Routes
+      live "/items", ItemLive.Index, :index
+      live "/items/new", ItemLive.Form, :new
+      live "/items/:id/edit", ItemLive.Form, :edit
+      live "/items/:id", ItemLive.Show, :show
+      live "/items/:id/show/edit", ItemLive.Show, :edit
+
     end
   end
 

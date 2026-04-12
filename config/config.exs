@@ -55,7 +55,7 @@ config :spark,
 config :ashcrud,
   ecto_repos: [Ashcrud.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Blog, Ashcrud.Accounts]
+  ash_domains: [Product, Blog, Ashcrud.Accounts]
 
 # Configure the endpoint
 config :ashcrud, AshcrudWeb.Endpoint,
