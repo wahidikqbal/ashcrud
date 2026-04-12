@@ -50,8 +50,8 @@ defmodule AshcrudWeb.ItemLive.Form do
       |> Ash.read!(actor: socket.assigns.current_user)
       |> Enum.map(fn m -> {m.name, m.id} end)
     
-      action = if is_nil(item), do: "New", else: "Edit"
-    page_title = action <> " " <> "Item"
+    action = if is_nil(item), do: "New", else: "Edit" # jika item nil, maka action "New", jika tidak nil, maka action "Edit"
+    page_title = action <> " " <> "Item" # untuk page title, kita gabungkan action dengan "Item", sehingga hasilnya "New Item" atau "Edit Item"
 
 
     {:ok,
