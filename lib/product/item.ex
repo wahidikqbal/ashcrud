@@ -34,10 +34,15 @@ defmodule Product.Item do
   end
 
   relationships do
-    belongs_to :material, Product.Material do
-      allow_nil? false   # wajib punya material
-      public? true
-    end
+    belongs_to :material, Product.Material,
+      allow_nil?: false,
+      public?: true,
+      attribute_type: :integer
+
+    belongs_to :user, Ashcrud.Accounts.User,
+      allow_nil?: false,
+      public?: true,
+      attribute_type: :uuid
   end
 
 end
