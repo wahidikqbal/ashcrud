@@ -4,5 +4,6 @@ defmodule Blog do
 
   resources do
     resource Blog.Post
+    resource Blog.Category
   end
 end
