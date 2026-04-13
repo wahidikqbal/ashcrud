@@ -89,7 +89,9 @@ defmodule AshcrudWeb.ItemLive.Form do
   defp assign_form(%{assigns: %{item: item}} = socket) do
     form =
       if item do
-        AshPhoenix.Form.for_update(item, :update, as: "item", actor: socket.assigns.current_user)
+        AshPhoenix.Form.for_update(item, :update,
+          as: "item", 
+          actor: socket.assigns.current_user)
       else
         AshPhoenix.Form.for_create(Product.Item, :create,
           as: "item",
