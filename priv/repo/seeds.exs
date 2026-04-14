@@ -9,3 +9,21 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
+alias Product.Material
+
+materials = [
+    "Material 1",
+    "Material 2",
+    "Material 3",
+    "Material 4",
+    "Material 5",
+]
+
+Enum.each(materials, fn name ->
+  Material
+  |> Ash.Changeset.for_create(:create, %{name: name})
+  |> Ash.create!()
+end)
+
+IO.puts("Created #{length(materials)} materials")
