@@ -58,6 +58,13 @@ defmodule AshcrudWeb.Router do
       live "/items/:id", ItemLive.Show, :show
       live "/items/:id/show/edit", ItemLive.Show, :edit
 
+      # LiveView Supplier Routes
+      live "/suppliers", SupplierLive.Index, :index
+      live "/suppliers/new", SupplierLive.Form, :new
+      live "/suppliers/:id/edit", SupplierLive.Form, :edit
+      live "/suppliers/:id", SupplierLive.Show, :show
+      live "/suppliers/:id/show/edit", SupplierLive.Show, :edit
+
     end
   end
 
