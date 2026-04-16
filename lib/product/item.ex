@@ -1,5 +1,5 @@
 defmodule Product.Item do
-  use Ash.Resource, 
+  use Ash.Resource,
     otp_app: :ashcrud,
     domain: Product,
     data_layer: AshPostgres.DataLayer,
@@ -68,6 +68,12 @@ defmodule Product.Item do
       allow_nil?: false,
       public?: true,
       attribute_type: :uuid
+
+    many_to_many :suppliers, Product.Supplier do
+      through Product.ItemSupplier
+      source_attribute_on_join_resource :item_id
+      destination_attribute_on_join_resource :supplier_id
+    end
   end
 
   ## POLICIES DIPINDAH KE Product.Policies.OwnerPolicy

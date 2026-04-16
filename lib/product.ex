@@ -6,6 +6,7 @@ defmodule Product do
     resource Product.Material
     resource Product.Item
     resource Product.Supplier
+    resource Product.ItemSupplier
   end
 
   authorization do
