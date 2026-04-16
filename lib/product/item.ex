@@ -25,7 +25,7 @@ defmodule Product.Item do
 
     create :create do
       accept [:name, :code, :material_id]
-      change relate_actor(:user) # Set user_id otomatis dari actor yang sedang login
+      change relate_actor(:user)
     end
 
     update :update do

@@ -30,7 +30,16 @@ defmodule AshcrudWeb.ItemLive.Form do
           options={@materials}
         />
 
-        <.button phx-disable-with="Saving..." variant="primary">Save Item</.button>
+        <.input
+          field={@form[:supplier_ids]}
+          type="select"
+          multiple={true}
+          label="Suppliers"
+          options={@suppliers}
+          value={@selected_supplier_ids}
+        />
+
+        <.button type="button" phx-click="submit_form" phx-disable-with="Saving..." variant="primary">Save Item</.button>
         <.button_link navigate={return_path(@return_to, @item)}>Cancel</.button_link>
       </.form>
     </Layouts.app>
@@ -42,16 +51,33 @@ defmodule AshcrudWeb.ItemLive.Form do
     item =
       case params["id"] do
         nil -> nil
-        id -> Ash.get!(Product.Item, id, actor: socket.assigns.current_user)
+        id -> 
+          Ash.get!(Product.Item, id, actor: socket.assigns.current_user)
       end
+    
+    selected_supplier_ids = if item do
+      item_id = if is_integer(item.id), do: item.id, else: String.to_integer(item.id)
       
+      Product.ItemSupplier
+      |> Ash.read!()
+      |> Enum.filter(fn is -> is.item_id == item_id end)
+      |> Enum.map(& &1.supplier_id)
+    else
+      []
+    end
+    
     materials = 
       Product.Material
       |> Ash.read!(actor: socket.assigns.current_user)
       |> Enum.map(fn m -> {m.name, m.id} end)
     
-    action = if is_nil(item), do: "New", else: "Edit" # jika item nil, maka action "New", jika tidak nil, maka action "Edit"
-    page_title = action <> " " <> "Item" # untuk page title, kita gabungkan action dengan "Item", sehingga hasilnya "New Item" atau "Edit Item"
+    suppliers =
+      Product.Supplier
+      |> Ash.read!(actor: socket.assigns.current_user)
+      |> Enum.map(fn s -> {s.name, s.id} end)
+    
+    action = if is_nil(item), do: "New", else: "Edit"
+    page_title = action <> " " <> "Item"
 
 
     {:ok,
@@ -59,6 +85,8 @@ defmodule AshcrudWeb.ItemLive.Form do
      |> assign(:return_to, return_to(params["return_to"]))
      |> assign(item: item)
      |> assign(:materials, materials)
+     |> assign(:suppliers, suppliers)
+     |> assign(:selected_supplier_ids, selected_supplier_ids)
      |> assign(:page_title, page_title)
      |> assign_form()}
   end
@@ -68,12 +96,26 @@ defmodule AshcrudWeb.ItemLive.Form do
 
   @impl true
   def handle_event("validate", %{"item" => item_params}, socket) do
-    {:noreply, assign(socket, form: AshPhoenix.Form.validate(socket.assigns.form, item_params))}
+    supplier_ids = Map.get(item_params, "supplier_ids", [])
+    IO.puts("VALIDATE: supplier_ids")
+    IO.inspect(supplier_ids)
+    {:noreply, assign(socket, :current_supplier_ids, supplier_ids)}
   end
 
-  def handle_event("save", %{"item" => item_params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.form, params: item_params) do
+  def handle_event("submit_form", _params, socket) do
+    IO.puts("SUBMIT CALLED")
+    
+    item_params = Map.get(socket.assigns.form.params, "item", %{})
+    supplier_ids = socket.assigns[:current_supplier_ids] || []
+    
+    IO.inspect(supplier_ids, label: "supplier_ids from assign")
+    
+    item_params_clean = Map.delete(item_params, "supplier_ids")
+
+    case AshPhoenix.Form.submit(socket.assigns.form, params: item_params_clean) do
       {:ok, item} ->
+        update_suppliers(item, supplier_ids)
+
         socket =
           socket
           |> put_flash(:info, "Item #{socket.assigns.form.source.type}d successfully")
@@ -86,7 +128,60 @@ defmodule AshcrudWeb.ItemLive.Form do
     end
   end
 
-  defp assign_form(%{assigns: %{item: item}} = socket) do
+  defp update_suppliers(item, supplier_ids) do
+    current = fetch_current_suppliers(item.id)
+    current_supplier_ids = (current || []) |> Enum.map(& &1.id)
+    
+    new_supplier_ids = supplier_ids 
+      |> Enum.map(fn sid -> 
+        case Integer.parse(to_string(sid)) do
+          {num, _} -> num
+          :error -> sid
+        end
+      end)
+      |> Enum.reject(&(&1 == nil || &1 == ""))
+
+    to_remove = current_supplier_ids -- new_supplier_ids
+    to_add = new_supplier_ids -- current_supplier_ids
+
+    for supplier_id <- to_remove do
+      Product.ItemSupplier
+      |> Ash.read!()
+      |> Enum.filter(fn is -> is.item_id == item.id && is.supplier_id == supplier_id end)
+      |> Enum.each(&Ash.destroy!/1)
+    end
+
+    for supplier_id <- to_add do
+      Product.ItemSupplier
+      |> Ash.Changeset.for_create(:create, item_id: item.id, supplier_id: supplier_id)
+      |> Ash.create!()
+    end
+
+    :ok
+  end
+
+  defp fetch_current_suppliers(item_id) do
+    item_id_int = if is_integer(item_id), do: item_id, else: String.to_integer(item_id)
+    
+    item_suppliers = Product.ItemSupplier
+    |> Ash.read!()
+    |> Enum.filter(fn is -> is.item_id == item_id_int end)
+    
+    supplier_ids = Enum.map(item_suppliers, & &1.supplier_id)
+    
+    if supplier_ids != [] do
+      Enum.reduce(supplier_ids, [], fn sid, acc ->
+        case Ash.get(Product.Supplier, sid) do
+          nil -> acc
+          supplier -> [supplier | acc]
+        end
+      end)
+    else
+      []
+    end
+  end
+
+  defp assign_form(%{assigns: %{item: item, selected_supplier_ids: selected_supplier_ids}} = socket) do
     form =
       if item do
         AshPhoenix.Form.for_update(item, :update,
@@ -99,6 +194,9 @@ defmodule AshcrudWeb.ItemLive.Form do
         )
       end
 
+    updated_params = Map.merge(form.params, %{"supplier_ids" => selected_supplier_ids})
+    form = %{form | params: updated_params}
+    
     assign(socket, form: to_form(form))
   end
 
