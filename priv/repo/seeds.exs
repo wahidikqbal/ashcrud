@@ -11,6 +11,7 @@
 # and so on) as they will fail if something goes wrong.
 
 alias Product.Material
+alias Product.Supplier
 
 materials = [
     "Material 1",
@@ -27,3 +28,19 @@ Enum.each(materials, fn name ->
 end)
 
 IO.puts("Created #{length(materials)} materials")
+
+suppliers = [
+    "Supplier 1",
+    "Supplier 2",
+    "Supplier 3",
+    "Supplier 4",
+    "Supplier 5",
+]
+
+Enum.each(suppliers, fn name ->
+  Supplier
+  |> Ash.Changeset.for_create(:create, %{name: name})
+  |> Ash.create!()
+end)
+
+IO.puts("Created #{length(suppliers)} suppliers")
