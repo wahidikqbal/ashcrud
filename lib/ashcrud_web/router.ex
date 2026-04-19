@@ -45,11 +45,11 @@ defmodule AshcrudWeb.Router do
       live "/categories/:id/show/edit", CategoryLive.Show, :edit
 
       # LiveView Material Routes
-      live "/materials", MaterialLive.Index, :index
-      live "/materials/new", MaterialLive.Form, :new
-      live "/materials/:id/edit", MaterialLive.Form, :edit
-      live "/materials/:id", MaterialLive.Show, :show
-      live "/materials/:id/show/edit", MaterialLive.Show, :edit
+      # live "/materials", MaterialLive.Index, :index
+      # live "/materials/new", MaterialLive.Form, :new
+      # live "/materials/:id/edit", MaterialLive.Form, :edit
+      # live "/materials/:id", MaterialLive.Show, :show
+      # live "/materials/:id/show/edit", MaterialLive.Show, :edit
 
       # LiveView Item Routes
       live "/items", ItemLive.Index, :index
@@ -66,6 +66,21 @@ defmodule AshcrudWeb.Router do
       live "/suppliers/:id/show/edit", SupplierLive.Show, :edit
 
     end
+
+    # admin only
+    ash_authentication_live_session :admin_routes,
+      on_mount: [
+        {AshcrudWeb.LiveUserAuth, :live_user_required},
+        {AshcrudWeb.RequireAdmin, :default}
+      ] do
+
+      live "/materials", MaterialLive.Index, :index
+      live "/materials/new", MaterialLive.Form, :new
+      live "/materials/:id/edit", MaterialLive.Form, :edit
+      live "/materials/:id", MaterialLive.Show, :show
+      live "/materials/:id/show/edit", MaterialLive.Show, :edit
+    end
+    
   end
 
   scope "/", AshcrudWeb do
