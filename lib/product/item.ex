@@ -21,16 +21,45 @@ defmodule Product.Item do
 
     destroy :destroy do
       primary? true
+
+      # Jika item dihapus, maka relasi dengan supplier juga dihapus (cascade delete)
+      # change manage_relationship(:suppliers, :suppliers,
+      #   type: :direct_control,
+      #   on_missing: :unrelate
+      # )
     end
 
     create :create do
       accept [:name, :code, :material_id]
       change relate_actor(:user) # Set user_id otomatis dari actor yang sedang login
+
+      argument :suppliers, {:array, :map} do
+        allow_nil? true
+        default []
+      end
+
+      change manage_relationship(:suppliers, :suppliers,
+        type: :append_and_remove,
+        on_no_match: :match,
+        on_match: :ignore
+      )
     end
 
     update :update do
       accept [:name, :code, :material_id]
       primary? true
+      require_atomic? false  # ✅ tambahkan ini
+
+      argument :suppliers, {:array, :map} do
+        allow_nil? true
+        default []
+      end
+
+      change manage_relationship(:suppliers, :suppliers,
+        type: :append_and_remove,
+        on_no_match: :match,
+        on_match: :ignore
+      )
     end
   end
 
