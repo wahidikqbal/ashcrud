@@ -5,8 +5,9 @@ defmodule Product.Policies.AdminPolicy do
             # Admin full akses
             bypass actor_present() do
                 authorize_if expr(^actor(:role) == :admin)
-            end 
+            end
 
+            # Allow reading for any authenticated user for public data
             policy action_type(:read) do
                 authorize_if actor_present()
             end
