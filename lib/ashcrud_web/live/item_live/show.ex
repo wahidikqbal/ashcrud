@@ -34,6 +34,16 @@ defmodule AshcrudWeb.ItemLive.Show do
             N/A
           <% end %>
         </:item>
+
+        <:item title="Supplier">
+          <%= if Enum.empty?(@item.suppliers) do %>
+            N/A
+          <% else %>
+            <%= for supplier <- @item.suppliers do %>
+              <div><%= supplier.name %></div>
+            <% end %>
+          <% end %>
+        </:item>
       </.list>
     </Layouts.app>
     """
@@ -44,6 +54,6 @@ defmodule AshcrudWeb.ItemLive.Show do
     {:ok,
      socket
      |> assign(:page_title, "Show Item")
-     |> assign(:item, Ash.get!(Product.Item, id, load: [:material], actor: socket.assigns.current_user))}
+     |> assign(:item, Ash.get!(Product.Item, id, load: [:material, :suppliers], actor: socket.assigns.current_user))}
   end
 end
