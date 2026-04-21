@@ -1,5 +1,6 @@
 defmodule Product.Material do
-  use Ash.Resource, otp_app: :ashcrud, domain: Product, data_layer: AshPostgres.DataLayer
+  use Ash.Resource, otp_app: :ashcrud, domain: Product, data_layer: AshPostgres.DataLayer, authorizers: [Ash.Policy.Authorizer]
+  use Product.Policies.AdminPolicy
 
   postgres do
     table "materials"

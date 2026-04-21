@@ -13,10 +13,8 @@ defmodule Product.Item do
   end
 
   actions do
-    # Read dengan filter otomatis
     read :read do
       primary? true
-      filter expr(user_id == ^actor(:id))
     end
 
     destroy :destroy do

@@ -243,10 +243,24 @@ defmodule Ashcrud.Accounts.User do
       sensitive? true
     end
 
+    attribute :role, :atom do
+      allow_nil? false
+      default :user
+      public? true
+      constraints one_of: [:user, :admin]
+    end
+
     attribute :confirmed_at, :utc_datetime_usec
   end
 
   identities do
     identity :unique_email, [:email]
+  end
+
+  policies do
+    policy action(:read) do
+      authorize_if expr(^actor(:role) == :admin)
+      authorize_if expr(id == ^actor(:id))
+    end
   end
 end
