@@ -256,4 +256,11 @@ defmodule Ashcrud.Accounts.User do
   identities do
     identity :unique_email, [:email]
   end
+
+  policies do
+    policy action(:read) do
+      authorize_if expr(^actor(:role) == :admin)
+      authorize_if expr(id == ^actor(:id))
+    end
+  end
 end

@@ -44,6 +44,14 @@ defmodule AshcrudWeb.ItemLive.Index do
           <% end %>
         </:col>
 
+         <:col :let={{_id, item}} label="Created By">
+          <%= if item.user do %>
+            <%= item.user.email %>
+          <% else %>
+            N/A
+          <% end %>
+        </:col>
+
         <:action :let={{_id, item}}>
           <div class="sr-only">
             <.link navigate={~p"/items/#{item}"}>Show</.link>
@@ -71,7 +79,7 @@ defmodule AshcrudWeb.ItemLive.Index do
      socket
      |> assign(:page_title, "Listing Items")
      |> assign_new(:current_user, fn -> nil end)
-     |> stream(:items, Ash.read!(Product.Item, load: [:material, :suppliers], actor: socket.assigns[:current_user]))}
+     |> stream(:items, Ash.read!(Product.Item, load: [:material, :suppliers, :user], actor: socket.assigns[:current_user]))}
   end
 
   @impl true
