@@ -6,7 +6,7 @@ defmodule AshcrudWeb.PostLive.Index do
     ~H"""
     <Layouts.app flash={@flash}>
       <.header>
-        Listing Posts
+        <h1 class="text-3xl font-semibold leading-tight">Posts</h1>
         <:actions>
           <.button_link variant="primary" navigate={~p"/posts/new"}>
             <.icon name="hero-plus" /> New Post

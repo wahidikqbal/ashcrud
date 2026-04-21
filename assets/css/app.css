@@ -91,6 +91,53 @@
   --depth: 1;
   --noise: 0;
 }
+/* CUSTOM THEME */
+@plugin "../vendor/daisyui-theme" {
+  name: "midnight-purple";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+
+  --color-base-100: oklch(22% 0.02 260);
+  --color-base-200: oklch(18% 0.018 260);
+  --color-base-300: oklch(14% 0.016 260);
+  --color-base-content: oklch(96% 0.02 260);
+
+  --color-primary: oklch(65% 0.26 290); /* ungu terang */
+  --color-primary-content: oklch(98% 0.02 290);
+
+  --color-secondary: oklch(70% 0.2 320); /* pink-ish */
+  --color-secondary-content: oklch(98% 0.02 320);
+
+  --color-accent: oklch(75% 0.25 200); /* cyan */
+  --color-accent-content: oklch(20% 0.03 200);
+
+  --color-neutral: oklch(30% 0.02 260);
+  --color-neutral-content: oklch(98% 0.01 260);
+
+  --color-info: oklch(70% 0.15 240);
+  --color-info-content: oklch(20% 0.02 240);
+
+  --color-success: oklch(68% 0.14 160);
+  --color-success-content: oklch(20% 0.02 160);
+
+  --color-warning: oklch(75% 0.18 80);
+  --color-warning-content: oklch(20% 0.02 80);
+
+  --color-error: oklch(65% 0.25 20);
+  --color-error-content: oklch(98% 0.01 20);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
 
 /* Add variants based on LiveView classes */
 @custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
