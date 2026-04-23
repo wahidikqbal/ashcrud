@@ -71,6 +71,7 @@ defmodule AshcrudWeb.PostLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Posts")
+     |> assign(:current_page, ~p"/posts")
      |> stream(:posts, Ash.read!(Blog.Post))}
   end
 

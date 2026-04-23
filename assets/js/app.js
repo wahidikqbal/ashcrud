@@ -23,6 +23,7 @@ import { LiveSocket } from "phoenix_live_view";
 import { hooks as colocatedHooks } from "phoenix-colocated/ashcrud";
 import topbar from "../vendor/topbar";
 import MishkaComponents from "../vendor/mishka_components.js";
+import Sidebar from "../vendor/sidebar.js";
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -34,6 +35,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: {
     ...colocatedHooks,
     ...MishkaComponents,
+    Sidebar,
   },
 });
 // Show progress bar on live navigation and form submits
@@ -43,7 +45,17 @@ topbar.config({
   },
   shadowColor: "rgba(0, 0, 0, .3)",
 });
-window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
+window.addEventListener("phx:page-loading-start", (_info) => {
+  topbar.show(300);
+  // Auto-close mobile sidebar on navigation
+  if (window.innerWidth < 1024) {
+    const sidebar = document.getElementById("admin-sidebar");
+    if (sidebar) {
+      sidebar.classList.remove("translate-x-0", "opacity-100");
+      sidebar.classList.add("-translate-x-full", "opacity-0");
+    }
+  }
+});
 window.addEventListener("phx:page-loading-stop", (_info) => topbar.hide());
 // connect if there are any LiveViews on the page
 liveSocket.connect();

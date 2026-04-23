@@ -11,6 +11,9 @@ defmodule AshcrudWeb.Layouts do
   # and other static content.
   embed_templates "layouts/*"
 
+  # ============================================================================
+  # Layouts.app component attrs
+  # ============================================================================
   @doc """
   Renders your app layout.
 
@@ -18,7 +21,7 @@ defmodule AshcrudWeb.Layouts do
   and it often contains your application menu, sidebar,
   or similar.
 
-  ## Examples
+  ## Examples:
 
       <Layouts.app flash={@flash}>
         <h1>Content</h1>
@@ -31,51 +34,207 @@ defmodule AshcrudWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :current_page, :any,
+    default: nil,
+    doc: "the current page path for active navigation highlighting"
+
+  attr :sidebar_minimized, :boolean,
+    default: false,
+    doc: "whether the sidebar is in minimized state"
+
+  attr :sidebar_class, :string,
+    default: "",
+    doc: "additional CSS classes for the sidebar"
+
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <%!-- <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li> --%>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </header>
+    <div class="flex h-screen bg-base-100 overflow-hidden">
+      <!-- Sidebar -->
+      <aside
+        id="admin-sidebar"
+        data-sidebar-selector="#admin-sidebar"
+        data-minimized="false"
+        data-expanded-width="16rem"
+        data-collapsed-width="4rem"
+        class={[
+          "bg-base-200 text-base-content h-full flex flex-col transition-all duration-300 ease-in-out",
+          "fixed lg:relative z-50",
+          "w-64 -translate-x-full lg:translate-x-0 opacity-0 lg:opacity-100",
+          @sidebar_class
+        ]}
+      >
+        <!-- Brand / Logo -->
+        <div class="h-16 flex items-center gap-3 px-4 border-b border-base-300 shrink-0">
+          <div class="flex items-center gap-2 overflow-hidden whitespace-nowrap" data-item-label>
+            <.link href="/" class="flex items-center gap-2 hover:no-underline flex-1 min-w-0">
+              <img src={~p"/images/logo.svg"} width="32" height="32" alt="Logo" class="shrink-0" />
+              <span class="text-lg font-semibold truncate">Ashcrud</span>
+            </.link>
+          </div>
+          <!-- Minimize button (desktop only) -->
+          <button
+            id="desktop-sidebar-minimize"
+            type="button"
+            class="btn btn-ghost btn-sm btn-circle hidden lg:flex ml-auto shrink-0"
+            phx-hook="Sidebar"
+            data-sidebar-selector="#admin-sidebar"
+            aria-label="Toggle sidebar"
+          >
+            <.icon name="hero-chevron-left" class="minimize-icon w-5 h-5 transition-transform" />
+          </button>
+        </div>
 
-    <main class="px-4 py-10 w-full">
-      <div class="mx-auto max-w-6xl space-y-4">
-        {render_slot(@inner_block)}
-      </div>
-    </main>
+        <!-- Navigation -->
+        <nav id="main-navigation" class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          <.sidebar_item navigate={~p"/"} icon="hero-home" label="Dashboard" />
+          <.sidebar_item
+            navigate={~p"/posts"}
+            icon="hero-document-text"
+            label="Posts"
+            active?={@current_page == ~p"/posts"}
+          />
+          <.sidebar_item
+            navigate={~p"/categories"}
+            icon="hero-queue-list"
+            label="Categories"
+          />
+          <.sidebar_item
+            navigate={~p"/suppliers"}
+            icon="hero-truck"
+            label="Suppliers"
+          />
+          <.sidebar_item
+            navigate={~p"/items"}
+            icon="hero-cube"
+            label="Items"
+          />
+          <.sidebar_item
+            navigate={~p"/materials"}
+            icon="hero-paint-brush"
+            label="Materials"
+          />
+        </nav>
 
-    <.flash_group flash={@flash} />
+        <!-- Bottom Section -->
+        <div class="border-t border-base-300 p-4 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="avatar placeholder">
+              <div class="bg-neutral text-neutral-content rounded-full w-8">
+                <span class="text-xs">AI</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0" data-item-label>
+              <p class="text-sm font-medium truncate">Admin User</p>
+              <p class="text-xs text-base-content/60 truncate">admin@example.com</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <!-- Top Header -->
+        <header class="navbar bg-base-100 border-b border-base-300 px-4 sm:px-6 lg:px-8 h-16 shrink-0">
+          <div class="flex-1 items-center gap-4">
+            <!-- Mobile menu button -->
+            <button
+              id="mobile-sidebar-toggle"
+              type="button"
+              class="btn btn-ghost btn-sm btn-circle lg:hidden"
+              phx-click={
+                JS.exec(
+                  "const s = document.getElementById('admin-sidebar');" <>
+                  "const hidden = s.classList.contains('-translate-x-full');" <>
+                  "if(hidden){" <>
+                  "  s.classList.remove('-translate-x-full','opacity-0');" <>
+                  "  s.classList.add('translate-x-0','opacity-100');" <>
+                  "}else{" <>
+                  "  s.classList.remove('translate-x-0','opacity-100');" <>
+                  "  s.classList.add('-translate-x-full','opacity-0');" <>
+                  "}"
+                )
+              }
+              aria-label="Toggle sidebar"
+            >
+              <.icon name="hero-bars-3" class="w-5 h-5" />
+            </button>
+
+            <.link href="/" class="flex items-center gap-2 text-sm font-semibold hover:no-underline">
+              <img src={~p"/images/logo.svg"} width="24" />
+              <span class="hidden sm:inline">v{Application.spec(:phoenix, :vsn)}</span>
+            </.link>
+          </div>
+
+          <div class="flex-none items-center gap-2">
+            <ul class="flex items-center px-1 space-x-2">
+              <li>
+                <.theme_toggle />
+              </li>
+              <li>
+                <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary btn-sm">
+                  Get Started <span aria-hidden="true">&rarr;</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 bg-base-100">
+          <div class="mx-auto max-w-6xl space-y-4">
+            {render_slot(@inner_block)}
+          </div>
+        </main>
+      </div>
+      </div>
+
+      <.flash_group flash={@flash} />
     """
   end
 
+  # ============================================================================
+  # Sidebar navigation item component
+  @doc """
+  Renders a navigation item for the admin sidebar.
+  """
+  attr :navigate, :any, required: true, doc: "Navigation target (live navigate)"
+  attr :icon, :string, required: true, doc: "Heroicon name (without hero- prefix)"
+  attr :label, :string, required: true, doc: "Navigation label text"
+  attr :active?, :boolean, default: false, doc: "Whether this item is active"
+
+  # Allow arbitrary attrs (like phx-click) to be passed to the link
+  attr :rest, :global, doc: "Additional HTML attributes for the link"
+
+  def sidebar_item(assigns) do
+    ~H"""
+    <li>
+      <.link
+        navigate={@navigate}
+        class={[
+          "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+          "hover:bg-base-300 hover:text-base-content",
+          @active? && "bg-primary/10 text-primary font-medium"
+        ]}
+        {@rest}
+      >
+        <span class="shrink-0">
+          <.icon name={@icon} class="w-5 h-5" />
+        </span>
+        <span class="truncate">{@label}</span>
+      </.link>
+    </li>
+    """
+  end
+
+  # ============================================================================
+  # Flash group component
+  # ============================================================================
   @doc """
   Shows the flash group with standard titles and content.
 
-  ## Examples
+  ## Examples:
 
       <.flash_group flash={@flash} />
   """
@@ -115,6 +274,9 @@ defmodule AshcrudWeb.Layouts do
     """
   end
 
+  # ============================================================================
+  # Theme toggle component
+  # ============================================================================
   @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 

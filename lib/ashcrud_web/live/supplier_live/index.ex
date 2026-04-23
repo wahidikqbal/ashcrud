@@ -1,6 +1,5 @@
 defmodule AshcrudWeb.SupplierLive.Index do
   use AshcrudWeb, :live_view
-  on_mount {AshcrudWeb.LiveUserAuth, :live_user_required}
 
   @impl true
   def render(assigns) do
@@ -50,6 +49,7 @@ defmodule AshcrudWeb.SupplierLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Suppliers")
+     |> assign(:current_page, ~p"/suppliers")
      |> stream(:suppliers, Ash.read!(Product.Supplier))}
   end
 

@@ -1,6 +1,5 @@
 defmodule AshcrudWeb.ItemLive.Index do
   use AshcrudWeb, :live_view
-  on_mount {AshcrudWeb.LiveUserAuth, :live_user_required}
 
   @impl true
   def render(assigns) do
@@ -78,6 +77,7 @@ defmodule AshcrudWeb.ItemLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Items")
+     |> assign(:current_page, ~p"/items")
      |> assign_new(:current_user, fn -> nil end)
      |> stream(:items, Ash.read!(Product.Item, load: [:material, :suppliers, :user], actor: socket.assigns[:current_user]))}
   end

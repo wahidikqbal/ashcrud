@@ -1,6 +1,6 @@
 defmodule AshcrudWeb.MaterialLive.Index do
   use AshcrudWeb, :live_view
-  on_mount {AshcrudWeb.LiveUserAuth, :live_user_required}
+  on_mount {AshcrudWeb.RequireAdmin, :default}
 
   @impl true
   def render(assigns) do
@@ -50,6 +50,7 @@ defmodule AshcrudWeb.MaterialLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Materials")
+     |> assign(:current_page, ~p"/materials")
      |> assign_new(:current_user, fn -> nil end)
      |> stream(:materials, Ash.read!(Product.Material, actor: socket.assigns[:current_user]))}
   end

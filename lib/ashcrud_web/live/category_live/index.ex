@@ -1,9 +1,6 @@
 defmodule AshcrudWeb.CategoryLive.Index do
   use AshcrudWeb, :live_view
 
-  # auth on_mounts are defined in AshcrudWeb.LiveUserAuth
-  on_mount {AshcrudWeb.LiveUserAuth, :live_user_required}
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -52,6 +49,7 @@ defmodule AshcrudWeb.CategoryLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Listing Categories")
+     |> assign(:current_page, ~p"/categories")
      |> assign_new(:current_user, fn -> nil end)
      |> stream(:categories, Ash.read!(Blog.Category, actor: socket.assigns[:current_user]))}
   end
