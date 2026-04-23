@@ -4,7 +4,7 @@ defmodule AshcrudWeb.SupplierLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Listing Suppliers
         <:actions>
@@ -50,6 +50,7 @@ defmodule AshcrudWeb.SupplierLive.Index do
      socket
      |> assign(:page_title, "Listing Suppliers")
      |> assign(:current_page, ~p"/suppliers")
+     |> assign(:current_user, socket.assigns.current_user)
      |> stream(:suppliers, Ash.read!(Product.Supplier))}
   end
 

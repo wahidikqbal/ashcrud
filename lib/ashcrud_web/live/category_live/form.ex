@@ -7,7 +7,7 @@ defmodule AshcrudWeb.CategoryLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         {@page_title}
         <:subtitle>Use this form to manage category records in your database.</:subtitle>
@@ -39,11 +39,20 @@ defmodule AshcrudWeb.CategoryLive.Form do
     action = if is_nil(category), do: "New", else: "Edit"
     page_title = action <> " " <> "Category"
 
+    current_page =
+      if category do
+        ~p"/categories/#{category}/edit"
+      else
+        ~p"/categories/new"
+      end
+
     {:ok,
      socket
      |> assign(:return_to, return_to(params["return_to"]))
-     |> assign(category: category)
+     |> assign(:category, category)
      |> assign(:page_title, page_title)
+     |> assign(:current_page, current_page)
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign_form()}
   end
 

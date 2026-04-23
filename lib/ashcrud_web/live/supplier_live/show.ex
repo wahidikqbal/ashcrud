@@ -5,7 +5,7 @@ defmodule AshcrudWeb.SupplierLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Supplier {@supplier.id}
         <:subtitle>This is a supplier record from your database.</:subtitle>
@@ -34,6 +34,8 @@ defmodule AshcrudWeb.SupplierLive.Show do
     {:ok,
      socket
      |> assign(:page_title, "Show Supplier")
+     |> assign(:current_page, ~p"/suppliers/#{id}")
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign(:supplier, Ash.get!(Product.Supplier, id))}
   end
 end

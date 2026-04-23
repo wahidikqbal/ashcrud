@@ -1,11 +1,12 @@
 defmodule AshcrudWeb.MaterialLive.Show do
   use AshcrudWeb, :live_view
   on_mount {AshcrudWeb.LiveUserAuth, :live_user_required}
+  on_mount {AshcrudWeb.RequireAdmin, :default}
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Material {@material.id}
         <:subtitle>This is a material record from your database.</:subtitle>
@@ -34,6 +35,8 @@ defmodule AshcrudWeb.MaterialLive.Show do
     {:ok,
      socket
      |> assign(:page_title, "Show Material")
+     |> assign(:current_page, ~p"/materials/#{id}")
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign(:material, Ash.get!(Product.Material, id, actor: socket.assigns.current_user))}
   end
 end

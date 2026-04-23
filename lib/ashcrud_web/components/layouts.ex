@@ -38,6 +38,10 @@ defmodule AshcrudWeb.Layouts do
     default: nil,
     doc: "the current page path for active navigation highlighting"
 
+  attr :current_user, :any,
+    default: nil,
+    doc: "the current authenticated user"
+
   attr :sidebar_minimized, :boolean,
     default: false,
     doc: "whether the sidebar is in minimized state"
@@ -99,21 +103,26 @@ defmodule AshcrudWeb.Layouts do
             navigate={~p"/categories"}
             icon="hero-queue-list"
             label="Categories"
+            active?={@current_page == ~p"/categories"}
           />
           <.sidebar_item
             navigate={~p"/suppliers"}
             icon="hero-truck"
             label="Suppliers"
+            active?={@current_page == ~p"/suppliers"}
           />
           <.sidebar_item
             navigate={~p"/items"}
             icon="hero-cube"
             label="Items"
+            active?={@current_page == ~p"/items"}
           />
           <.sidebar_item
+            :if={is_admin?(@current_user)}
             navigate={~p"/materials"}
             icon="hero-paint-brush"
             label="Materials"
+            active?={@current_page == ~p"/materials"}
           />
         </nav>
 
@@ -318,7 +327,11 @@ defmodule AshcrudWeb.Layouts do
       >
         <.icon name="hero-stop-circle-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
-    </div>
-    """
-  end
+     </div>
+     """
+   end
+
+   # Helper to check admin role
+  defp is_admin?(%{role: :admin}), do: true
+  defp is_admin?(_), do: false
 end

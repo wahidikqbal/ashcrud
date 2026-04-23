@@ -4,7 +4,7 @@ defmodule AshcrudWeb.ItemLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Listing Items
         <:actions>
@@ -78,7 +78,7 @@ defmodule AshcrudWeb.ItemLive.Index do
      socket
      |> assign(:page_title, "Listing Items")
      |> assign(:current_page, ~p"/items")
-     |> assign_new(:current_user, fn -> nil end)
+     |> assign(:current_user, socket.assigns.current_user)
      |> stream(:items, Ash.read!(Product.Item, load: [:material, :suppliers, :user], actor: socket.assigns[:current_user]))}
   end
 

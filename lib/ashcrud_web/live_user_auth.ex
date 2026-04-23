@@ -10,7 +10,20 @@ defmodule AshcrudWeb.LiveUserAuth do
   # To use, place the following at the top of that liveview:
   # on_mount {AshcrudWeb.LiveUserAuth, :current_user}
   def on_mount(:current_user, _params, session, socket) do
-    {:cont, AshAuthentication.Phoenix.LiveSession.assign_new_resources(socket, session)}
+    # First assign current_user from session
+    {:cont, socket} = AshAuthentication.Phoenix.LiveSession.assign_new_resources(socket, session)
+
+    # Then load the role field if user exists
+    case socket.assigns[:current_user] do
+      nil ->
+        {:cont, socket}
+
+      user ->
+        case Ash.load(user, [:role]) do
+          {:ok, loaded_user} -> {:cont, assign(socket, :current_user, loaded_user)}
+          _ -> {:cont, socket}
+        end
+    end
   end
 
   def on_mount(:live_user_optional, _params, _session, socket) do

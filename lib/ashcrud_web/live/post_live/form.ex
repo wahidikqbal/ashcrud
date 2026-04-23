@@ -4,7 +4,7 @@ defmodule AshcrudWeb.PostLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         {@page_title}
         <:subtitle>Use this form to manage post records in your database.</:subtitle>
@@ -40,11 +40,20 @@ defmodule AshcrudWeb.PostLive.Form do
     action = if is_nil(post), do: "New", else: "Edit"
     page_title = action <> " " <> "Post"
 
+    current_page =
+      if post do
+        ~p"/posts/#{post}/edit"
+      else
+        ~p"/posts/new"
+      end
+
     {:ok,
      socket
      |> assign(:return_to, return_to(params["return_to"]))
      |> assign(post: post)
      |> assign(:page_title, page_title)
+     |> assign(:current_page, current_page)
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign_form()}
   end
 

@@ -7,7 +7,7 @@ defmodule AshcrudWeb.CategoryLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Category {@category.id}
         <:subtitle>This is a category record from your database.</:subtitle>
@@ -33,9 +33,13 @@ defmodule AshcrudWeb.CategoryLive.Show do
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
+    category = Ash.get!(Blog.Category, id, actor: socket.assigns.current_user)
+
     {:ok,
      socket
      |> assign(:page_title, "Show Category")
-     |> assign(:category, Ash.get!(Blog.Category, id, actor: socket.assigns.current_user))}
+     |> assign(:current_page, ~p"/categories/#{category}")
+     |> assign(:current_user, socket.assigns.current_user)
+     |> assign(:category, category)}
   end
 end

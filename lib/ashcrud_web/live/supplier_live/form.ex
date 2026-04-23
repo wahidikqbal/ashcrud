@@ -5,7 +5,7 @@ defmodule AshcrudWeb.SupplierLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         {@page_title}
         <:subtitle>Use this form to manage supplier records in your database.</:subtitle>
@@ -37,11 +37,20 @@ defmodule AshcrudWeb.SupplierLive.Form do
     action = if is_nil(supplier), do: "New", else: "Edit"
     page_title = action <> " " <> "Supplier"
 
+    current_page =
+      if supplier do
+        ~p"/suppliers/#{supplier}/edit"
+      else
+        ~p"/suppliers/new"
+      end
+
     {:ok,
      socket
      |> assign(:return_to, return_to(params["return_to"]))
      |> assign(supplier: supplier)
      |> assign(:page_title, page_title)
+     |> assign(:current_page, current_page)
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign_form()}
   end
 

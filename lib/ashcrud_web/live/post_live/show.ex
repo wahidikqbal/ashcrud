@@ -4,7 +4,7 @@ defmodule AshcrudWeb.PostLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Post {@post.id}
         <:subtitle>This is a post record from your database.</:subtitle>
@@ -35,6 +35,8 @@ defmodule AshcrudWeb.PostLive.Show do
     {:ok,
      socket
      |> assign(:page_title, "Show Post")
+     |> assign(:current_page, ~p"/posts/#{id}")
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign(:post, Ash.get!(Blog.Post, id))}
   end
 end

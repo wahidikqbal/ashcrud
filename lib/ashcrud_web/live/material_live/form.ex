@@ -1,11 +1,12 @@
 defmodule AshcrudWeb.MaterialLive.Form do
   use AshcrudWeb, :live_view
   on_mount {AshcrudWeb.LiveUserAuth, :live_user_required}
+  on_mount {AshcrudWeb.RequireAdmin, :default}
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         {@page_title}
         <:subtitle>Use this form to manage material records in your database.</:subtitle>
@@ -37,11 +38,20 @@ defmodule AshcrudWeb.MaterialLive.Form do
     action = if is_nil(material), do: "New", else: "Edit"
     page_title = action <> " " <> "Material"
 
+    current_page =
+      if material do
+        ~p"/materials/#{material}/edit"
+      else
+        ~p"/materials/new"
+      end
+
     {:ok,
      socket
      |> assign(:return_to, return_to(params["return_to"]))
      |> assign(material: material)
      |> assign(:page_title, page_title)
+     |> assign(:current_page, current_page)
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign_form()}
   end
 

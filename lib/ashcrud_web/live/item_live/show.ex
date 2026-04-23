@@ -5,7 +5,7 @@ defmodule AshcrudWeb.ItemLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         Item {@item.id}
         <:subtitle>This is a item record from your database.</:subtitle>
@@ -54,6 +54,8 @@ defmodule AshcrudWeb.ItemLive.Show do
     {:ok,
      socket
      |> assign(:page_title, "Show Item")
+     |> assign(:current_page, ~p"/items/#{id}")
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign(:item, Ash.get!(Product.Item, id, load: [:material, :suppliers], actor: socket.assigns.current_user))}
   end
 end

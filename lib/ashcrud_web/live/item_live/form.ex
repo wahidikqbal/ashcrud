@@ -5,7 +5,7 @@ defmodule AshcrudWeb.ItemLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_user={@current_user} current_page={@current_page}>
       <.header>
         {@page_title}
         <:subtitle>Use this form to manage item records in your database.</:subtitle>
@@ -56,27 +56,32 @@ defmodule AshcrudWeb.ItemLive.Form do
           |> Ash.get!(id, actor: socket.assigns.current_user)
           |> Ash.load!(:suppliers, actor: socket.assigns.current_user)
       end
-    
-    
-    materials = 
+
+    materials =
       Product.Material
       |> Ash.read!(actor: socket.assigns.current_user)
       |> Enum.map(fn m -> {m.name, m.id} end)
 
     suppliers =
       Product.Supplier
-    |> Ash.read!(actor: socket.assigns.current_user)
-    |> Enum.map(fn s -> {s.name, s.id} end)
+      |> Ash.read!(actor: socket.assigns.current_user)
+      |> Enum.map(fn s -> {s.name, s.id} end)
 
     selected_supplier_ids =
       case item do
         nil -> []
         item -> Enum.map(item.suppliers, & &1.id)
       end
-    
-    action = if is_nil(item), do: "New", else: "Edit" # jika item nil, maka action "New", jika tidak nil, maka action "Edit"
-    page_title = action <> " " <> "Item" # untuk page title, kita gabungkan action dengan "Item", sehingga hasilnya "New Item" atau "Edit Item"
 
+    action = if is_nil(item), do: "New", else: "Edit"
+    page_title = action <> " " <> "Item"
+
+    current_page =
+      if item do
+        ~p"/items/#{item}/edit"
+      else
+        ~p"/items/new"
+      end
 
     {:ok,
      socket
@@ -86,6 +91,8 @@ defmodule AshcrudWeb.ItemLive.Form do
      |> assign(:suppliers, suppliers)
      |> assign(:selected_supplier_ids, selected_supplier_ids)
      |> assign(:page_title, page_title)
+     |> assign(:current_page, current_page)
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign_form()}
   end
 
@@ -108,6 +115,7 @@ defmodule AshcrudWeb.ItemLive.Form do
       item_params
       |> Map.put("suppliers", suppliers)
       |> Map.delete("supplier_ids")
+
     {:noreply, assign(socket, form: AshPhoenix.Form.validate(socket.assigns.form, item_params))}
   end
 
@@ -120,14 +128,12 @@ defmodule AshcrudWeb.ItemLive.Form do
         id -> id
       end)
 
-  suppliers = Enum.map(supplier_ids, fn id -> %{"id" => id} end)  # ✅ string key
+    suppliers = Enum.map(supplier_ids, fn id -> %{"id" => id} end)
 
-  item_params =
-    item_params
-    |> Map.put("suppliers", suppliers)
-    |> Map.delete("supplier_ids")
-
-    IO.inspect(item_params, label: ">>> item_params")
+    item_params =
+      item_params
+      |> Map.put("suppliers", suppliers)
+      |> Map.delete("supplier_ids")
 
     case AshPhoenix.Form.submit(socket.assigns.form, params: item_params) do
       {:ok, item} ->
@@ -139,7 +145,6 @@ defmodule AshcrudWeb.ItemLive.Form do
         {:noreply, socket}
 
       {:error, form} ->
-        IO.inspect(form.source.source.errors, label: ">>> changeset errors")
         {:noreply, assign(socket, form: form)}
     end
   end
@@ -148,8 +153,9 @@ defmodule AshcrudWeb.ItemLive.Form do
     form =
       if item do
         AshPhoenix.Form.for_update(item, :update,
-          as: "item", 
-          actor: socket.assigns.current_user)
+          as: "item",
+          actor: socket.assigns.current_user
+        )
       else
         AshPhoenix.Form.for_create(Product.Item, :create,
           as: "item",
