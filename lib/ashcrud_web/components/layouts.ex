@@ -44,12 +44,12 @@ defmodule AshcrudWeb.Layouts do
       </div>
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
+          <%!-- <li>
             <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
           </li>
           <li>
             <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
+          </li> --%>
           <li>
             <.theme_toggle />
           </li>
@@ -62,8 +62,8 @@ defmodule AshcrudWeb.Layouts do
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+    <main class="px-4 py-10 w-full">
+      <div class="mx-auto max-w-6xl space-y-4">
         {render_slot(@inner_block)}
       </div>
     </main>
@@ -148,7 +148,6 @@ defmodule AshcrudWeb.Layouts do
       >
         <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
-
 
       <button
         class="flex p-2 cursor-pointer w-1/4"

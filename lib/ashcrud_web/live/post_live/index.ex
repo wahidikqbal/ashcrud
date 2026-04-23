@@ -5,43 +5,63 @@ defmodule AshcrudWeb.PostLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.header>
-        <h1 class="text-3xl font-semibold leading-tight">Posts</h1>
-        <:actions>
-          <.button_link variant="primary" navigate={~p"/posts/new"}>
-            <.icon name="hero-plus" /> New Post
-          </.button_link>
-        </:actions>
-      </.header>
-
-      <.table
-        id="posts"
-        rows={@streams.posts}
-        row_click={fn {_id, post} -> JS.navigate(~p"/posts/#{post}") end}
-      >
-        <:col :let={{_id, post}} label="Id">{post.id}</:col>
-
-        <:col :let={{_id, post}} label="Title">{post.title}</:col>
-
-        <:col :let={{_id, post}} label="Content">{post.content}</:col>
-
-        <:action :let={{_id, post}}>
-          <div class="sr-only">
-            <.link navigate={~p"/posts/#{post}"}>Show</.link>
-          </div>
-
-          <.link navigate={~p"/posts/#{post}/edit"}>Edit</.link>
-        </:action>
-
-        <:action :let={{id, post}}>
-          <.link
-            phx-click={JS.push("delete", value: %{id: post.id}) |> hide("##{id}")}
-            data-confirm="Are you sure?"
+      <main class="px-4 py-6">
+        <div class="mx-auto max-w-6xl space-y-4">
+          <.header>
+            <h1 class="text-3xl font-semibold leading-tight">Posts</h1>
+            <:actions>
+              <.button_link variant="primary" navigate={~p"/posts/new"}>
+                <.icon name="hero-plus" /> New Post
+              </.button_link>
+            </:actions>
+          </.header>
+          <.table
+            id="posts"
+            variant="base_hoverable"
+            color=""
+            padding="medium"
+            rows_border="extra_small"
+            text_size="small"
+            class="w-full p-4 border border-gray-200 rounded-lg"
           >
-            Delete
-          </.link>
-        </:action>
-      </.table>
+            <:header>ID</:header>
+            <:header>Title</:header>
+            <:header>Content</:header>
+            <:header>Aksi</:header>
+
+            <tbody id="posts-stream" phx-update="stream">
+              <%= for {id, post} <- @streams.posts do %>
+                <.tr id={id} phx-click={JS.navigate(~p"/posts/#{post}")} class="cursor-pointer">
+                  <.td>{post.id}</.td>
+                  <.td>
+                    <.link navigate={~p"/posts/#{post}"} class="hover:underline">
+                      {post.title}
+                    </.link>
+                  </.td>
+                  <.td>{post.content}</.td>
+                  <.td>
+                    <div class="flex gap-3">
+                      <.link
+                        navigate={~p"/posts/#{post}/edit"}
+                        class="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Edit
+                      </.link>
+                      <.link
+                        phx-click={JS.push("delete", value: %{id: post.id}) |> hide("##{id}")}
+                        data-confirm="Are you sure?"
+                        class="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </.link>
+                    </div>
+                  </.td>
+                </.tr>
+              <% end %>
+            </tbody>
+          </.table>
+        </div>
+      </main>
     </Layouts.app>
     """
   end
