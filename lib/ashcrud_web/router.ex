@@ -23,56 +23,58 @@ defmodule AshcrudWeb.Router do
 
    # Main scope with authentication
    scope "/", AshcrudWeb do
-     pipe_through :browser
+      pipe_through :browser
 
-     # All authenticated LiveView routes in ONE live session
-     ash_authentication_live_session :authenticated_routes,
-       on_mount: [
-         {AshcrudWeb.LiveUserAuth, :live_user_required}
-       ] do
+      # All authenticated LiveView routes in ONE live session
+      ash_authentication_live_session :authenticated_routes,
+        on_mount: [
+          {AshcrudWeb.LiveUserAuth, :live_user_required}
+        ] do
 
-       # Category routes
-       live "/categories", CategoryLive.Index, :index
-       live "/categories/new", CategoryLive.Form, :new
-       live "/categories/:id/edit", CategoryLive.Form, :edit
-       live "/categories/:id", CategoryLive.Show, :show
-       live "/categories/:id/show/edit", CategoryLive.Show, :edit
+        # Category routes
+        live "/categories", CategoryLive.Index, :index
+        live "/categories/new", CategoryLive.Form, :new
+        live "/categories/:id/edit", CategoryLive.Form, :edit
+        live "/categories/:id", CategoryLive.Show, :show
+        live "/categories/:id/show/edit", CategoryLive.Show, :edit
 
-       # Item routes
-       live "/items", ItemLive.Index, :index
-       live "/items/new", ItemLive.Form, :new
-       live "/items/:id/edit", ItemLive.Form, :edit
-       live "/items/:id", ItemLive.Show, :show
-       live "/items/:id/show/edit", ItemLive.Show, :edit
+        # Item routes
+        live "/items", ItemLive.Index, :index
+        live "/items/new", ItemLive.Form, :new
+        live "/items/:id/edit", ItemLive.Form, :edit
+        live "/items/:id", ItemLive.Show, :index
+        live "/items/:id/show/edit", ItemLive.Show, :edit
 
-       # Supplier routes
-       live "/suppliers", SupplierLive.Index, :index
-       live "/suppliers/new", SupplierLive.Form, :new
-       live "/suppliers/:id/edit", SupplierLive.Form, :edit
-       live "/suppliers/:id", SupplierLive.Show, :show
-       live "/suppliers/:id/show/edit", SupplierLive.Show, :edit
+        # Supplier routes
+        live "/suppliers", SupplierLive.Index, :index
+        live "/suppliers/new", SupplierLive.Form, :new
+        live "/suppliers/:id/edit", SupplierLive.Form, :edit
+        live "/suppliers/:id", SupplierLive.Show, :index
+        live "/suppliers/:id/show/edit", SupplierLive.Show, :edit
 
-       # Post routes
-       live "/posts", PostLive.Index, :index
-       live "/posts/new", PostLive.Form, :new
-       live "/posts/:id/edit", PostLive.Form, :edit
-       live "/posts/:id", PostLive.Show, :show
-       live "/posts/:id/show/edit", PostLive.Show, :edit
-     end
+        # Post routes
+        live "/posts", PostLive.Index, :index
+        live "/posts/new", PostLive.Form, :new
+        live "/posts/:id/edit", PostLive.Form, :edit
+        live "/posts/:id", PostLive.Show, :index
+        live "/posts/:id/show/edit", PostLive.Show, :edit
 
-     # Admin-only routes (auth + admin check)
-     ash_authentication_live_session :admin_routes,
-       on_mount: [
-         {AshcrudWeb.LiveUserAuth, :live_user_required},
-         {AshcrudWeb.RequireAdmin, :default}
-       ] do
-       # Material routes - admin only
-       live "/materials", MaterialLive.Index, :index
-       live "/materials/new", MaterialLive.Form, :new
-       live "/materials/:id/edit", MaterialLive.Form, :edit
-       live "/materials/:id", MaterialLive.Show, :show
-       live "/materials/:id/show/edit", MaterialLive.Show, :edit
-     end
+        # Material routes
+        live "/materials", MaterialLive.Index, :index
+        live "/materials/new", MaterialLive.Form, :new
+        live "/materials/:id/edit", MaterialLive.Form, :edit
+        live "/materials/:id", MaterialLive.Show, :index
+        live "/materials/:id/show/edit", MaterialLive.Show, :edit
+      end
+
+      # Admin-only routes (auth + admin check - for ash_admin dashboard only)
+      ash_authentication_live_session :admin_routes,
+        on_mount: [
+          {AshcrudWeb.LiveUserAuth, :live_user_required},
+          {AshcrudWeb.RequireAdmin, :default}
+        ] do
+        # AshAdmin dashboard routes (if accessed under /admin) 
+      end
    end
 
   # Public routes (non-LiveView, authentication flows, etc.)
