@@ -45,8 +45,14 @@ defmodule Product.ItemSupplier do
   end
   
   policies do
-    bypass always() do
-      authorize_if always()
+    # Admin memiliki akses penuh
+    bypass actor_present() do
+      authorize_if expr(^actor(:role) == :admin)
+    end
+
+    # Hanya pemilik item yang dapat mengelola relasi supplier pada item tersebut
+    policy action_type([:read, :create, :destroy]) do
+      authorize_if expr(^actor(:id) == item().user_id)
     end
   end
 end
