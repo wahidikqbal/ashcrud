@@ -1,4 +1,5 @@
 const Sidebar = {
+  STORAGE_KEY: "ashcrud:sidebar_minimized",
   defaults: {
     expandedWidth: "250px",
     collapsedWidth: "60px",
@@ -108,6 +109,30 @@ const Sidebar = {
   },
 
   mounted() {
+    // Restore sidebar state from localStorage
+    const savedState = localStorage.getItem(this.STORAGE_KEY);
+    const shouldCollapse = savedState === "true";
+
+    if (shouldCollapse) {
+      const elements = this.getElements(this.el);
+      if (elements) {
+        const config = this.getConfig(elements.sidebar);
+        // Disable transition for instant initial restore (no animation on page load)
+        elements.sidebar.style.transition = "none";
+        this.collapseSidebar(elements.sidebar, elements.labels, config.collapsedWidth);
+        // Force reflow to apply width change instantly
+        void elements.sidebar.offsetHeight;
+        // Restore transition for future interactions
+        elements.sidebar.style.transition = `width ${this.defaults.transitionDuration} ease`;
+        // Rotate icon to match collapsed state
+        const icon = this.el.querySelector(".minimize-icon");
+        if (icon) {
+          icon.classList.add("rotate-180");
+        }
+      }
+    }
+
+    // Setup click handler
     this.clickHandler = this.handleClick.bind(this);
     this.el.addEventListener("click", this.clickHandler);
   },
@@ -118,6 +143,10 @@ const Sidebar = {
 
     const config = this.getConfig(elements.sidebar);
     this.Sidebar(elements, config);
+
+    // Save new state to localStorage
+    const newState = elements.sidebar.getAttribute("data-minimized");
+    localStorage.setItem(this.STORAGE_KEY, newState);
 
     const icon = this.el.querySelector(".minimize-icon");
     if (icon) {
