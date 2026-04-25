@@ -30,14 +30,15 @@ defmodule AshcrudWeb.ItemLive.Form do
           options={@materials}
         />
 
-        <.input
-          field={@form[:supplier_ids]}
-          type="select"
-          label="Supplier"
-          options={@suppliers}
-          multiple
-          value={@selected_supplier_ids}
-        />
+         <.input
+           type="select"
+           label="Supplier"
+           options={@suppliers}
+           multiple
+           value={@selected_supplier_ids}
+           name="item[supplier_ids][]"
+           id="item-supplier-ids"
+         />
 
         <.button phx-disable-with="Saving..." variant="primary">Save Item</.button>
         <.button_link navigate={return_path(@return_to, @item)}>Cancel</.button_link>

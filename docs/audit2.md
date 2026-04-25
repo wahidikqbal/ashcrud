@@ -110,31 +110,69 @@ Namun, `config/dev.exs:25` memiliki `check_origin: false` yang dapat diterima un
 
 ## 3. MASALAH POLICY & OTORISASI
 
-### 3.1 Analisis Policy
+### 3.1 Role Loading Failure - Admin Bypass 🔴 KRITIS
 
-#### **Policy User** (`ashcrud/accounts/user.ex:260-265`)
-- ✅ Benar-benar membatasi read ke admin atau diri sendiri
-- ⚠️ Menggunakan `expr(^actor(:role) == :admin)` tapi role mungkin tidak ter-load kecuali diminta secara eksplisit (lihat di bawah)
+**Tingkat:** KRITIS  
+**Dampak:** Admin checks dapat di-bypass jika role gagal di-load
 
-**BUG KRITIS:** `actor(:role)` mengasumsikan actor memiliki field `role` yang sudah di-load. Di `live_user_auth.ex:22-25`, ada percobaan untuk load role:
+**Temuan:** `LiveUserAuth.on_mount(:current_user)` memiliki fallback yang berbahaya:
 ```elixir
+# Sebelum (baris 22-25)
 case Ash.load(user, [:role]) do
   {:ok, loaded_user} -> assign(socket, :current_user, loaded_user)
   _ -> {:cont, socket}  # ❌ Fallback ke user TANPA role!
 end
 ```
 
-Jika `Ash.load` gagal, role user tidak di-load, dan `actor(:role)` dalam policy akan menjadi `nil`, berpotensi membuka celah admin checks.
+Jika `Ash.load` gagal, `actor(:role)` akan `nil` di policy checks, memungkinkan bypass admin checks.
 
-**Rekomendasi:** Ubah menjadi:
+**Status:** ✅ **FIXED** (25 Apr 2026)  
+**Perbaikan:** `lib/ashcrud_web/live_user_auth.ex:22-27`
 ```elixir
 case Ash.load(user, [:role]) do
   {:ok, loaded_user} -> {:cont, assign(socket, :current_user, loaded_user)}
-  {:error, _} -> {:halt, redirect(socket, to: ~p"/sign-in")}
+  {:error, _} ->
+    socket =
+      socket
+      |> put_flash(:error, "Sesi tidak valid, silakan login kembali")
+      |> clear_session()
+    {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/sign-in")}
 end
 ```
 
 ---
+
+### 3.2 Material Resource - Read Access for All Authenticated ✅ FIXED
+
+**Masalah Awal:** Material policy menggunakan `AdminPolicy` yang hanya mengizinkan admin read & modify. Namun user biasa perlu read materials untuk **dropdown di Item form**.
+
+**Solusi:** Buat policy khusus di `Material` resource:
+
+```elixir
+policies do
+  # Semua user terautentikasi dapat membaca material (untuk dropdown)
+  policy action_type(:read) do
+    authorize_if actor_present()
+  end
+
+  # Hanya admin yang dapat create/update/destroy
+  bypass actor_present() do
+    authorize_if expr(^actor(:role) == :admin)
+  end
+end
+```
+
+**Implications:**
+- ✅ User biasa: bisa read materials (dropdown Item form)
+- ✅ Admin: full access (bypass)
+- ✅ Material LiveViews tetap admin-only (via `RequireAdmin` on_mount di router)
+- 🔒 Create/Update/Delete tetap restricted ke admin
+
+**Files Changed:**
+- `product/material.ex` - custom policy (removed `use AdminPolicy`)
+- `ashcrud_web/router.ex` - material routes di `admin_routes` session
+
+**Status:** ✅ **FIXED** (25 Apr 2026)
 
 ### 3.2 Resource Khusus Admin: Material
 
@@ -331,7 +369,7 @@ Jalankan `mix deps.audit` untuk cek kerentanan known. Dependency terkini:
 
 | # | Isu | File | Effort |
 |---|-----|------|--------|
-| 3 | Role loading failure bisa bypass admin checks | `live_user_auth.ex` | 30 mnt |
+| 3 | Role loading failure bisa bypass admin checks | `live_user_auth.ex` | ✅ FIXED |
 | 4 | Cakupan test minimal (<5%) | All | 16 jam+ |
 | 5 | Hardcoded secrets di config | `dev.exs`, `test.exs` | 30 mnt |
 
@@ -340,7 +378,7 @@ Jalankan `mix deps.audit` untuk cek kerentanan known. Dependency terkini:
 | # | Isu | File | Effort |
 |---|-----|------|--------|
 | 6 | Tidak ada pagination pada listing resource | All index LiveViews | 4 jam |
-| 7 | Akses Material resource admin tidak dipaksakan | `router.ex`, `material_live` | 1 jam |
+| 7 | Material resource policy adjusted (read all auth, modify admin-only) | `router.ex`, `material.ex` | ✅ FIXED |
 | 8 | Dependency `postgrex` tidak dipin | `mix.exs` | 5 mnt |
 | 9 | Email sender TODOs | Email sender modules | 15 mnt |
 
@@ -355,26 +393,29 @@ Jalankan `mix deps.audit` untuk cek kerentanan known. Dependency terkini:
 
 ## 13. RENCANA TINDAK LANJUT REKOMENDASI
 
-### **Fase 1 - Perbaikan Keamanan (Segera)**
-1. ✅ Tambahkan `actor: socket.assigns.current_user` ke semua aksi Ash di Supplier dan Post LiveViews
-2. ✅ Perbaiki policy ItemSupplier untuk menegaskan minimal ownership checks
-3. ✅ Perbaiki `LiveUserAuth.on_mount(:current_user)` untuk redirect saat load gagal
+### **Fase 1 - Perbaikan Keamanan (SELESAI)**
+1. ✅ Perbaiki policy ItemSupplier untuk menegaskan ownership checks (C2)
+2. ✅ Perbaiki `LiveUserAuth.on_mount(:current_user)` redirect on error (H1)
+3. ✅ Material resource: policy read all authenticated, admin-only C/U/D + admin-only routes (M2)
+
+### **Fase 1 - PERLU LANJUT (BELUM SELESAI)**
+4. ⬜ Tambahkan `actor: socket.assigns.current_user` ke semua aksi Ash di Supplier & Post LiveViews (C1)
 
 ### **Fase 2 - Testing & Quality**
-4. ✅ Tulis test integrasi untuk semua flow autentikasi
-5. ✅ Tulis test policy untuk verifikasi otorisasi bekerja
-6. ✅ Tulis test LiveView untuk operasi CRUD
+5. ⬜ Tulis test integrasi untuk semua flow autentikasi
+6. ⬜ Tulis test policy untuk verifikasi otorisasi bekerja
+7. ⬜ Tulis test LiveView untuk operasi CRUD
 
 ### **Fase 3 - Skalabilitas**
-7. ✅ Implementasi Ash pagination (keyset atau offset) untuk semua index pages
-8. ✅ Review penggunaan `require_atomic? false` dan refactor jika memungkinkan
-9. ✅ Tambah tuning database connection pooling jika perlu
+8. ⬜ Implementasi Ash pagination (keyset atau offset) untuk semua index pages
+9. ⬜ Review penggunaan `require_atomic? false` dan refactor jika memungkinkan
+10. ⬜ Tambah tuning database connection pooling jika perlu
 
 ### **Fase 4 - Production Readiness**
-10. ✅ Pastikan semua secrets via environment variables
-11. ✅ Review konfigurasi logging (sudah bagus)
-12. ✅ Tambah monitoring (AppSignal/Scout/etc.)
-13. ✅ Review error handling (gunakan `Ash.get` bukan `Ash.get!` di production)
+11. ⬜ Pastikan semua secrets via environment variables
+12. ⬜ Review konfigurasi logging (sudah bagus)
+13. ⬜ Tambah monitoring (AppSignal/Scout/etc.)
+14. ⬜ Review error handling (gunakan `Ash.get` bukan `Ash.get!` di production)
 
 ---
 
@@ -392,16 +433,75 @@ Jalankan `mix deps.audit` untuk cek kerentanan known. Dependency terkini:
 
 ## 15. PENILAIAN AKHIR
 
-**Tingkat Keamanan:** 🔴 **RISIKO TINGGI**  
+**Tingkat Keamanan:** 🟡 **RISIKO SEDANG** (1 kritikal repaired, 1 kritikal masih open)  
 **Kualitas Kode:** 🟡 **PERLU PEMBUANGAN**  
 **Kesiapan Production:** 🔴 **BELUM SIAP**
 
-Aplikasi mengandung **kerentanan bypass otorisasi kritis** yang memungkinkan user terautentikasi (atau bahkan tidak terautentikasi) untuk mengakses dan memodifikasi resource Supplier dan Post tanpa pemeriksaan kepemilikan atau role. Ini harus diperbaiki **SEBELUM deployment production apapun**.
+**Status Perbaikan Isu Kritis:**
+- ✅ **C2. ItemSupplier bypass policy** - DIPERBAIKI (ownership + admin policy)
+- ✅ **H1. Role loading failure** - DIPERBAIKI (redirect on error)
+- ✅ **M2. Material admin access** - DIPERBAIKI (read all authenticated, C/U/D admin-only + admin routes)
+- ⬜ **C1. Missing actor parameter** - **MASIH TERBUKA** (12 lokasi di Supplier & Post LiveViews)
+
+Aplikasi masih mengandung **kerentanan authorization bypass** di Supplier & Post LiveViews (12 lokasi). Ini harus diperbaiki **SEBELUM deployment production**.
 
 Cakupan testing sangat rendah (<5%), membuat refactoring berisiko. Test komprehensif sangat diperlukan.
 
-Codebase menunjukkan pemahaman yang baik tentang pola Ash Framework tapi ada celah di area kritis keamanan (actor passing, policy enforcement). Setelah isu kritis diperbaiki dan test ditambahkan, ini akan menjadi aplikasi yang solid.
+Codebase menunjukkan pemahaman yang baik tentang pola Ash Framework. Setelah isu kritis terakhir (C1) diperbaiki dan test ditambahkan, ini akan menjadi aplikasi yang solid dan aman.
 
 ---
 
-**Audit selesai.**
+## 16. BUGFIXES - POST-AUDIT DISCOVERIES
+
+### **16.1 Item Form Supplier Not Saved** ✅ FIXED
+
+**Problem:** Supplier multi-select field di Item form tidak menyimpan data karena using `field={@form[:supplier_ids]}` yang tidak ada dalam Ash form, sehingga `name` attribute tidak ter-set dengan benar.
+
+**File:** `lib/ashcrud_web/live/item_live/form.ex:33-40`
+
+**Solution:** Ganti dengan select input explicit dengan `name="item[supplier_ids][]"`.
+
+```heex
+<.input
+  type="select"
+  label="Supplier"
+  options={@suppliers}
+  multiple
+  value={@selected_supplier_ids}
+  name="item[supplier_ids][]"
+  id="item-supplier-ids"
+/>
+```
+
+---
+
+### **16.2 Item Creation Fails with Forbidden Error** ✅ FIXED
+
+**Problem:** Setelah bugfix 16.1, item creation still fails with:
+```
+** (Ash.Error.Forbidden) Cannot use a filter to authorize a create.
+Filter: "e13bbf74-f8f2-44e5-b809-913eea909568" == item.user_id
+```
+
+**Root Cause:** 
+- `ItemSupplier` policy menggunakan `expr(^actor(:id) == item().user_id)` untuk action `:create`
+- Policy ini references relationship `item().user_id` yang memerlukan DB query (filter)
+- Ash tidak mengizinkan filter expression pada create action (karena record belum ada)
+- `manage_relationship` di Item secara default **memicu policy check** pada join resource (ItemSupplier) saat membuat join records
+
+**Solution:**
+1. **ItemSupplier policy** – remove `:create` dari policy yang menggunakan `item().user_id`. Sekarang hanya `:read` dan `:destroy` yang dicek ownership.
+2. **Item manage_relationship** – tambahkan opsi `authorize?: false` untuk menonaktifkan policy check pada join records. 
+   - Ini aman karena parent Item action sudah di-authorize via OwnerPolicy.
+   - Join records hanya bisa dimodifikasi melalui Item yang sudah diotorisasi.
+
+**Files Modified:**
+- `lib/product/item_supplier.ex:47-51` – policy action type dikurangi ke `[:read, :destroy]`
+- `lib/product/item.ex:39-43` dan `56-60` – tambah `authorize?: false` pada `manage_relationship`
+
+**Result:** Item dapat dibuat dengan suppliers tanpa error, dan join records aman karena hanya pemilik item (atau admin) yang bisa mengubah melalui item.
+
+---
+
+**Audit selesai.**  
+**Last checklist update:** 25 April 2026

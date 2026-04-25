@@ -27,38 +27,40 @@ defmodule Product.Item do
       # )
     end
 
-    create :create do
-      accept [:name, :code, :material_id]
-      change relate_actor(:user) # Set user_id otomatis dari actor yang sedang login
+     create :create do
+       accept [:name, :code, :material_id]
+       change relate_actor(:user) # Set user_id otomatis dari actor yang sedang login
 
-      argument :suppliers, {:array, :map} do
-        allow_nil? true
-        default []
-      end
+       argument :suppliers, {:array, :map} do
+         allow_nil? true
+         default []
+       end
 
-      change manage_relationship(:suppliers, :suppliers,
-        type: :append_and_remove,
-        on_no_match: :match,
-        on_match: :ignore
-      )
-    end
+       change manage_relationship(:suppliers, :suppliers,
+         type: :append_and_remove,
+         on_no_match: :match,
+         on_match: :ignore,
+         authorize?: false
+       )
+     end
 
-    update :update do
-      accept [:name, :code, :material_id]
-      primary? true
-      require_atomic? false  # ✅ tambahkan ini
+     update :update do
+       accept [:name, :code, :material_id]
+       primary? true
+       require_atomic? false  # ✅ tambahkan ini
 
-      argument :suppliers, {:array, :map} do
-        allow_nil? true
-        default []
-      end
+       argument :suppliers, {:array, :map} do
+         allow_nil? true
+         default []
+       end
 
-      change manage_relationship(:suppliers, :suppliers,
-        type: :append_and_remove,
-        on_no_match: :match,
-        on_match: :ignore
-      )
-    end
+       change manage_relationship(:suppliers, :suppliers,
+         type: :append_and_remove,
+         on_no_match: :match,
+         on_match: :ignore,
+         authorize?: false
+       )
+     end
   end
 
   ## ATTRIBUTES

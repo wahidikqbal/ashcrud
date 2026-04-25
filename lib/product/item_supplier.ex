@@ -50,8 +50,9 @@ defmodule Product.ItemSupplier do
       authorize_if expr(^actor(:role) == :admin)
     end
 
-    # Hanya pemilik item yang dapat mengelola relasi supplier pada item tersebut
-    policy action_type([:read, :create, :destroy]) do
+    # Hanya pemilik item yang dapat membaca atau menghapus relasi supplier
+    # Catatan: create tidak diinclude karena manage_relationship pada Item akan menggunakan authorize?: false
+    policy action_type([:read, :destroy]) do
       authorize_if expr(^actor(:id) == item().user_id)
     end
   end

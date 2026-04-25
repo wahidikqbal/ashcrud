@@ -1,6 +1,9 @@
 defmodule Product.Material do
-  use Ash.Resource, otp_app: :ashcrud, domain: Product, data_layer: AshPostgres.DataLayer, authorizers: [Ash.Policy.Authorizer]
-  use Product.Policies.AdminPolicy
+  use Ash.Resource,
+    otp_app: :ashcrud,
+    domain: Product,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "materials"
@@ -30,4 +33,15 @@ defmodule Product.Material do
     has_many :items, Product.Item
   end
 
+  policies do
+    # Semua user terautentikasi dapat membaca material (untuk dropdown di item form)
+    policy action_type(:read) do
+      authorize_if actor_present()
+    end
+
+    # Hanya admin yang dapat create/update/destroy
+    bypass actor_present() do
+      authorize_if expr(^actor(:role) == :admin)
+    end
+  end
 end

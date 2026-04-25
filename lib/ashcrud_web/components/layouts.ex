@@ -327,9 +327,9 @@ defmodule AshcrudWeb.Layouts do
       >
         <.icon name="hero-stop-circle-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
-     </div>
-     """
-   end
+    </div>
+    """
+  end
 
    # Helper to check admin role
   defp is_admin?(%{role: :admin}), do: true

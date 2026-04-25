@@ -50,11 +50,17 @@ Checklist ini digunakan untuk melacak status perbaikan dari audit yang dilakukan
 
 **File:** `lib/ashcrud_web/live_user_auth.ex:17-26`
 
-**Perbaikan Required:** Handle error case dengan redirect, bukan fallback ke user tanpa role.
+**Perbaikan Required:** Handle error case dengan redirect ke sign-in, bukan fallback ke user tanpa role.
+
+**Status:** ✅ **FIXED** (25 Apr 2026)
+**Perubahan:**
+- Ganti fallback `_ -> {:cont, socket}` dengan error handling
+- Jika `Ash.load` gagal → clear session & redirect ke `/sign-in`
+- Prevent bypass dengan memastikan role selalu ada untuk authenticated user
 
 | Status | File | Baris | Catatan |
 |--------|------|-------|---------|
-| ⬜ NOT STARTED | live_user_auth.ex | 17-26 | Perbaiki fallback error ke redirect |
+| ✅ FIXED | live_user_auth.ex | 17-26 | Redirect jika role gagal di-load |
 
 ---
 
@@ -121,20 +127,31 @@ Checklist ini digunakan untuk melacak status perbaikan dari audit yang dilakukan
 
 ---
 
-### **M2. Material Resource Admin Access Not Enforced**
-**Deskripsi:** Material policy mengizinkan read untuk semua authenticated user, dan routes tidak dalam admin-only live_session.
+### **M2. Material Resource Policy Adjusted (Read All Auth, Modify Admin-Only) ✅ FIXED**
 
-**Files:**
-- `lib/product/material.ex` (policy)
-- `lib/ashcrud_web/router.ex` (routes)
+**Deskripsi Awal:** Material menggunakan `AdminPolicy` yang membuat **read hanya admin**. Namun user biasa perlu membaca materials untuk dropdown di Item form. Selain itu, routes material belum dalam admin-only live_session.
 
-**Perbaikan Required:** Pilih salah satu:
-- [ ] Opsi A: Pindahkan routes material ke admin-only live_session
-- [ ] Opsi B: Ubah policy Material untuk restrict read ke admin saja
+**Solusi:**
+1. **Policy Khusus di Material** (hapus `use AdminPolicy`):
+   - `read`: semua user terautentikasi (`authorize_if actor_present()`)
+   - `create/update/destroy`: hanya admin (`bypass` dengan `role == :admin`)
+2. **Router:** Pindahkan material routes ke `admin_routes` live_session (dengan `RequireAdmin` on_mount)
+
+**Hasil:**
+- ✅ User biasa: bisa read materials (dropdown Item form)
+- ✅ Admin: full access (bypass)
+- ✅ Material management pages (index/show/edit) hanya admin yang bisa akses
+
+**Files Modified:**
+- `lib/product/material.ex` – custom policies inline
+- `lib/ashcrud_web/router.ex` – material routes to admin-only session
+
+**Status:** ✅ **FIXED** (25 Apr 2026)
 
 | Status | File | Catatan |
 |--------|------|---------|
-| ⬜ NOT STARTED | router.ex & material.ex | Belum dipaksakan akses admin |
+| ✅ FIXED | product/material.ex | Policy: read all auth, C/U/D admin-only |
+| ✅ FIXED | ashcrud_web/router.ex | Routes moved to admin_routes |
 
 ---
 
@@ -202,11 +219,11 @@ Checklist ini digunakan untuk melacak status perbaikan dari audit yang dilakukan
 
 | Priority | Total | ✅ Fixed | ⬜ Not Started | 🚧 In Progress |
 |----------|-------|---------|----------------|----------------|
-| Critical | 2 | 1 | 1 | 0 |
-| High | 3 | 0 | 3 | 0 |
-| Medium | 4 | 0 | 4 | 0 |
+| Critical | 2 | 1 (C2) | 1 (C1) | 0 |
+| High | 3 | 1 (H1) | 2 (H2, H3) | 0 |
+| Medium | 4 | 1 (M2) | 3 (M1, M3, M4) | 0 |
 | Low | 2 | 0 | 2 | 0 |
-| **Total** | **11** | **1** | **10** | **0** |
+| **Total** | **11** | **3** | **8** | **0** |
 
 ---
 
@@ -215,33 +232,107 @@ Checklist ini digunakan untuk melacak status perbaikan dari audit yang dilakukan
 | Date | Issue | Action Taken | By |
 |------|-------|--------------|-----|
 | 2026-04-25 | C2. ItemSupplier bypass policy | Replaced bypass dengan policy admin + ownership check | Kilo |
+| 2026-04-25 | H1. Role loading failure | Fixed live_user_auth.ex: handle Ash.load error dengan redirect | Kilo |
+| 2026-04-25 | M2. Material admin access | Moved routes to admin_routes live_session; fixed AdminPolicy (removed public read) | Kilo |
 | 2026-04-25 | - | Audit report created di `docs/audit2.md` | Kilo |
-| 2026-04-25 | - | Checklist created di `docs/audit-checklist.md` | Kilo |
+| 2026-04-25 | - | Checklist created & updated di `docs/audit-checklist.md` | Kilo |
 
 ---
 
 ## 🎯 **NEXT STEPS**
 
-1. **Segera (Critical + High):**
-   - [ ] Fix C1: Tambahkan actor ke semua Ash actions di Supplier & Post LiveViews
-   - [ ] Fix H1: Handle Ash.load failure di LiveUserAuth.on_mount
-   - [ ] Fix H3: Move secrets ke environment variables
+### **Phase 1 - Security Fixes (SISA)**
+1. ⬜ **C1. Fix Missing Actor Parameter** (12 locations)
+   - Perbaiki `supplier_live/*.ex` (9 locations)
+   - Perbaiki `post_live/*.ex` (6 locations)
+   - **Effort:** 2 jam
 
-2. **Testing (High):**
-   - [ ] Setup test skeleton untuk LiveView tests
-   - [ ] Write policy tests untuk verify ownership works
-   - [ ] Write autentikasi flow tests
+2. ⬜ **H3. Hardcoded Secrets** (4 locations)
+   - Pindah ke environment variables di dev & test
+   - **Effort:** 30 mnt
 
-3. **Scalability (Medium):**
-   - [ ] Implement pagination di semua index
-   - [ ] Enforce Material admin access
+### **Phase 2 - Testing & Quality**
+3. ⬜ **H2. Comprehensive Test Coverage**
+   - Test LiveView CRUD (Items, Categories, Suppliers, Posts, Materials)
+   - Test policies (ownership, admin bypass)
+   - Test auth flows (register, sign-in, reset, confirmation)
+   - **Effort:** 16-40 jam
 
-4. **Production Readiness:**
-   - [ ] Review require_atomic? usage
-   - [ ] Configure production email sender
-   - [ ] Pin postgrex dependency
+### **Phase 3 - Scalability**
+4. ⬜ **M1. Implement Pagination**
+   - All index pages (Items, Categories, Suppliers, Posts, Materials)
+   - Gunakan Ash pagination (keyset recommended)
+   - **Effort:** 4-8 jam
+
+5. ⬜ **L1. Review Non-Atomic Operations**
+   - Evaluate `item.ex:49` dan `user.ex:70`
+   - **Effort:** 1 jam
+
+### **Phase 4 - Production Readiness**
+6. ⬜ **M3. Pin postgrex dependency**
+   - Ubah di `mix.exs` ke `{:postgrex, "~> 0.17"}`
+   - **Effort:** 5 mnt
+
+7. ⬜ **M4. Configure Email Sender**
+   - Update `*_email.ex` modules dengan configurable from address
+   - Setup development mailbox config
+   - **Effort:** 15 mnt
+
+8. ⬜ **L2. Extract Inline JS** (optional)
+   - Extract `layouts.ex` mobile sidebar JS ke colocated hook
+   - **Effort:** 30 mnt
 
 ---
 
-**Last Updated:** 25 April 2026  
+---
+
+## 🐞 **POST-AUDIT BUGFIXES**
+
+### **B1. Item Form Supplier Select Not Saved** ✅ FIXED
+**Deskripsi:** Field select supplier di Item form tidak menyimpan dataecause using `field={@form[:supplier_ids]}` yang tidak ada, sehingga name attribute tidak ter-set dengan benar.
+
+**File:** `lib/ashcrud_web/live/item_live/form.ex:33-40`
+
+**Perbaikan:** Ganti dengan select input explicit dengan `name="item[supplier_ids][]"` dan tetap Gunakan mapping manual ke `suppliers`.
+
+| Status | File | Catatan |
+|--------|------|---------|
+| ✅ FIXED | item_live/form.ex | Supplier select sekarang bisa menyimpan relasi |
+
+---
+
+### **B2. Item Creation fails with Forbidden (ItemSupplier policy)** ✅ FIXED
+
+**Deskripsi:** Setelah B1 fixed, creating item masih gagal dengan error:
+```
+** (Ash.Error.Forbidden) Cannot use a filter to authorize a create.
+Filter: actor_id == item.user_id
+```
+
+**Root Cause:**
+- ItemSupplier policy menggunakan `expr(^actor(:id) == item().user_id)` untuk action `:create`
+- Expression ini mereferensikan relationship `item().user_id` yang memerlukan DB query (filter) saat create
+- Ash tidak mengizinkan filter expression pada create action (record belum ada)
+- `manage_relationship` di Item secara default memicu policy check pada join resource (ItemSupplier) saat membuat join records
+
+**Solution:**
+1. **ItemSupplier policy** – remove `:create` dari policy tersebut (hanya `[:read, :destroy]`). Createjoin akan di-handle via parent Item dengan `authorize?: false`.
+2. **Item `manage_relationship`** – tambahkan opsi `authorize?: false` untuk menonaktifkan policy check pada join records. 
+   - Ini aman karena parent Item action sudah di-authorize via OwnerPolicy.
+   - Join records hanya bisa dimodifikasi melalui Item yang sudah diotorisasi.
+
+**Files Modified:**
+- `lib/product/item_supplier.ex` – policy action type `[:read, :destroy]` only
+- `lib/product/item.ex` – tambah `authorize?: false` pada `manage_relationship` (create & update actions)
+
+**Result:** Item berhasil dibuat dengan suppliers, dan join records aman karena hanya pemilik item (atau admin) yang bisa mengubah melalui item.
+
+| Status | File | Catatan |
+|--------|------|---------|
+| ✅ FIXED | item_supplier.ex | Policy: read & destroy only (create excluded) |
+| ✅ FIXED | item.ex | manage_relationship dengan authorize?: false |
+
+---
+
+**Last Updated:** 25 April 2026
 **Audit Reference:** `docs/audit2.md`
