@@ -126,17 +126,74 @@ window.SidebarToggle = {
 
 // Apply initial state immediately on page load
 (function() {
+  // Direct read from localStorage to ensure we get the correct value
   const storedMinimized = localStorage.getItem('sidebar_minimized');
-  const storedMobileOpen = localStorage.getItem('sidebar_mobile_open');
+  console.log('Initial state - storedMinimized:', storedMinimized);
   const minimized = storedMinimized === 'true';
-  const mobileOpen = storedMobileOpen === 'true';
+  console.log('Initial state - minimized:', minimized);
   
-  // Apply initial state immediately
-  window.SidebarToggle.applyStateDirect(minimized, mobileOpen);
+  // Force remove mobile-related classes first, then apply minimized state
+  const applyNow = () => {
+    const sidebar = document.getElementById('sidebar-drawer');
+    if (!sidebar) {
+      console.log('Sidebar not found!');
+      return;
+    }
+    
+    console.log('Applying sidebar state:', minimized);
+    console.log('Current sidebar classes:', sidebar.className);
+    
+    // Always ensure mobile classes are removed first
+    sidebar.classList.remove('hidden', 'fixed', 'inset-0', 'z-50');
+    sidebar.classList.add('md:flex');
+    
+    // Then apply minimized state for desktop
+    if (minimized) {
+      sidebar.classList.remove('w-60');
+      sidebar.classList.add('w-16');
+      // Hide text labels
+      document.querySelectorAll('.sidebar-label').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.sidebar-section-label').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.sidebar-brand-text').forEach(el => el.classList.add('hidden'));
+    } else {
+      sidebar.classList.remove('w-16');
+      sidebar.classList.add('w-60');
+      // Show text labels
+      document.querySelectorAll('.sidebar-label').forEach(el => el.classList.remove('hidden'));
+      document.querySelectorAll('.sidebar-section-label').forEach(el => el.classList.remove('hidden'));
+      document.querySelectorAll('.sidebar-brand-text').forEach(el => el.classList.remove('hidden'));
+    }
+    
+    console.log('After apply - sidebar classes:', sidebar.className);
+  };
+  
+  // Apply immediately if sidebar exists, otherwise wait
+  const sidebar = document.getElementById('sidebar-drawer');
+  console.log('Sidebar element found:', !!sidebar);
+  if (sidebar) {
+    applyNow();
+  } else {
+    const checkInterval = setInterval(() => {
+      const el = document.getElementById('sidebar-drawer');
+      if (el) {
+        clearInterval(checkInterval);
+        applyNow();
+      }
+    }, 50);
+    setTimeout(() => clearInterval(checkInterval), 3000);
+  }
 })();
 
 const SidebarManager = {
   mounted() {
+    // Always re-apply state from localStorage on mount to handle navigation
+    const storedMinimized = localStorage.getItem('sidebar_minimized') === 'true';
+    const storedMobileOpen = localStorage.getItem('sidebar_mobile_open') === 'true';
+    const isMobile = window.innerWidth < 768;
+    
+    // Apply state on mount
+    window.SidebarToggle.applyStateDirect(storedMinimized, isMobile ? storedMobileOpen : false);
+    
     // Listen for state changes
     document.addEventListener('sidebar:state-changed', (e) => {
       window.SidebarToggle.applyStateDirect(e.detail.minimized, e.detail.mobileOpen);
@@ -192,19 +249,9 @@ window.addEventListener("phx:page-loading-start", (_info) => {
     const backdrop = document.getElementById('sidebar-backdrop');
     if (backdrop) backdrop.remove();
     localStorage.setItem('sidebar_mobile_open', 'false');
-    const sidebar = document.getElementById('sidebar-drawer');
-    if (sidebar) {
-      sidebar.classList.add('hidden');
-      sidebar.classList.remove('fixed', 'inset-0', 'z-50');
-    }
-    // Reset hamburger icon immediately
-    const mobileBtn = document.querySelector('[data-sidebar-mobile-btn]');
-    if (mobileBtn) {
-      const icon = mobileBtn.querySelector('svg');
-      if (icon) icon.setAttribute('name', 'hero-bars-3');
-      mobileBtn.setAttribute('aria-label', 'Open sidebar');
-    }
   }
+  // For both mobile and desktop - ensure sidebar state is maintained
+  // Don't add 'hidden' class as it breaks desktop layout
 });
 window.addEventListener("phx:page-loading-stop", (_info) => topbar.hide());
 // connect if there are any LiveViews on the page
