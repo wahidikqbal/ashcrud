@@ -45,7 +45,7 @@ defmodule Ashcrud.MixProject do
       {:picosat_elixir, "~> 0.2"},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:mishka_chelekom, "~> 0.0", only: [:dev]},
-      {:live_debugger, "~> 0.7", only: [:dev]},
+      {:live_debugger, "~> 1.0", only: [:dev]},
       {:ash_admin, "~> 0.14"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},

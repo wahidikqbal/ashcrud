@@ -83,12 +83,14 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 config :phoenix_live_view,
-  # Include debug annotations and locations in rendered markup.
-  # Changing this configuration will require mix clean and a full recompile.
-  debug_heex_annotations: true,
-  debug_attributes: true,
-  # Enable helpful, but potentially expensive runtime checks
-  enable_expensive_runtime_checks: true
+  debug_heex_annotations: false,
+  debug_attributes: false,
+  enable_expensive_runtime_checks: false
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :live_debugger,
+  tracer_max_heap_size: 10,
+  trace_handler_max_heap_size: 10,
+  garbage_collection: true
