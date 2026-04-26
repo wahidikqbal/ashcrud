@@ -59,7 +59,7 @@ defmodule AshcrudWeb.Layouts do
       <aside
         id="admin-sidebar"
         data-sidebar-selector="#admin-sidebar"
-        data-minimized="false"
+        data-minimized={@sidebar_minimized}
         data-expanded-width="16rem"
         data-collapsed-width="4rem"
         class={[
@@ -152,19 +152,8 @@ defmodule AshcrudWeb.Layouts do
               id="mobile-sidebar-toggle"
               type="button"
               class="btn btn-ghost btn-sm btn-circle lg:hidden"
-              phx-click={
-                JS.exec(
-                  "const s = document.getElementById('admin-sidebar');" <>
-                  "const hidden = s.classList.contains('-translate-x-full');" <>
-                  "if(hidden){" <>
-                  "  s.classList.remove('-translate-x-full','opacity-0');" <>
-                  "  s.classList.add('translate-x-0','opacity-100');" <>
-                  "}else{" <>
-                  "  s.classList.remove('translate-x-0','opacity-100');" <>
-                  "  s.classList.add('-translate-x-full','opacity-0');" <>
-                  "}"
-                )
-              }
+              phx-hook="Sidebar"
+              data-sidebar-selector="#admin-sidebar"
               aria-label="Toggle sidebar"
             >
               <.icon name="hero-bars-3" class="w-5 h-5" />

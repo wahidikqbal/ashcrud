@@ -59,7 +59,7 @@ defmodule AshcrudWeb.ItemLive.Index do
           <.link navigate={~p"/items/#{item}/edit"}>Edit</.link>
         </:action>
 
-        <:action :let={{id, item}}>
+        <:action :let={{_id, item}}>
           <.link
             phx-click={
               JS.push("confirm_delete", value: %{id: item.id})

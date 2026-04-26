@@ -4,7 +4,7 @@ defmodule AshcrudWeb.LiveUserAuth do
   """
 
   import Phoenix.Component
-  import Phoenix.LiveView
+  
   use AshcrudWeb, :verified_routes
 
   # This is used for nested liveviews to fetch the current user.
