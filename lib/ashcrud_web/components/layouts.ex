@@ -5,6 +5,11 @@ defmodule AshcrudWeb.Layouts do
   """
   use AshcrudWeb, :html
 
+  alias AshcrudWeb.Components.PhiaSidebar, as: UISidebar
+  alias AshcrudWeb.Components.PhiaButton
+  import AshcrudWeb.Components.Icon
+  alias Phoenix.LiveView.JS
+
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
@@ -55,127 +60,56 @@ defmodule AshcrudWeb.Layouts do
   def app(assigns) do
     ~H"""
     <div class="flex h-screen bg-base-100 overflow-hidden">
-      <!-- Sidebar -->
-      <aside
-        id="admin-sidebar"
-        data-sidebar-selector="#admin-sidebar"
-        data-minimized={@sidebar_minimized}
-        data-expanded-width="16rem"
-        data-collapsed-width="4rem"
-        class={[
-          "bg-base-200 text-base-content h-full flex flex-col transition-all duration-300 ease-in-out",
-          "fixed lg:relative z-50",
-          "w-64 -translate-x-full lg:translate-x-0 opacity-0 lg:opacity-100",
-          @sidebar_class
-        ]}
-      >
-        <!-- Brand / Logo -->
-        <div class="h-16 flex items-center gap-3 px-4 border-b border-base-300 shrink-0">
-          <div class="flex items-center gap-2 overflow-hidden whitespace-nowrap" data-item-label>
-            <.link href="/" class="flex items-center gap-2 hover:no-underline flex-1 min-w-0">
-              <img src={~p"/images/logo.svg"} width="32" height="32" alt="Logo" class="shrink-0" />
-              <span class="text-lg font-semibold truncate">Ashcrud</span>
-            </.link>
-          </div>
-          <!-- Minimize button (desktop only) -->
-          <button
-            id="desktop-sidebar-minimize"
-            type="button"
-            class="btn btn-ghost btn-sm btn-circle hidden lg:flex ml-auto shrink-0"
-            phx-hook="Sidebar"
-            data-sidebar-selector="#admin-sidebar"
-            aria-label="Toggle sidebar"
-          >
-            <.icon name="hero-chevron-left" class="minimize-icon w-5 h-5 transition-transform" />
-          </button>
-        </div>
-
-        <!-- Navigation -->
-        <nav id="main-navigation" class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          <.sidebar_item navigate={~p"/"} icon="hero-home" label="Dashboard" />
-          <.sidebar_item
-            navigate={~p"/posts"}
-            icon="hero-document-text"
-            label="Posts"
-            active?={@current_page == ~p"/posts"}
-          />
-          <.sidebar_item
-            navigate={~p"/categories"}
-            icon="hero-queue-list"
-            label="Categories"
-            active?={@current_page == ~p"/categories"}
-          />
-          <.sidebar_item
-            navigate={~p"/suppliers"}
-            icon="hero-truck"
-            label="Suppliers"
-            active?={@current_page == ~p"/suppliers"}
-          />
-          <.sidebar_item
-            navigate={~p"/items"}
-            icon="hero-cube"
-            label="Items"
-            active?={@current_page == ~p"/items"}
-          />
-          <.sidebar_item
-            :if={is_admin?(@current_user)}
-            navigate={~p"/materials"}
-            icon="hero-paint-brush"
-            label="Materials"
-            active?={@current_page == ~p"/materials"}
-          />
-        </nav>
-
-        <!-- Bottom Section -->
-        <div class="border-t border-base-300 p-4 shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="avatar placeholder">
-              <div class="bg-neutral text-neutral-content rounded-full w-8">
-                <span class="text-xs">AI</span>
-              </div>
-            </div>
-            <div class="flex-1 min-w-0" data-item-label>
-              <p class="text-sm font-medium truncate">Admin User</p>
-              <p class="text-xs text-base-content/60 truncate">admin@example.com</p>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <!-- PhiaUI Sidebar -->
+      <UISidebar.sidebar variant={:default} collapsed={@sidebar_minimized}>
+        <:brand>
+          <.link href="/" class="flex items-center gap-2 hover:no-underline">
+            <img src={~p"/images/logo.svg"} width="32" height="32" alt="Logo" class="shrink-0" />
+            <span class="text-lg font-semibold truncate">Ashcrud</span>
+          </.link>
+        </:brand>
+        <:nav_items>
+          <UISidebar.sidebar_section label="Main Menu">
+            <UISidebar.sidebar_item navigate={~p"/"} active={@current_page == ~p"/"}>
+              Dashboard
+            </UISidebar.sidebar_item>
+            <UISidebar.sidebar_item navigate={~p"/posts"} active={@current_page == ~p"/posts"}>
+              Posts
+            </UISidebar.sidebar_item>
+            <UISidebar.sidebar_item navigate={~p"/categories"} active={@current_page == ~p"/categories"}>
+              Categories
+            </UISidebar.sidebar_item>
+            <UISidebar.sidebar_item navigate={~p"/suppliers"} active={@current_page == ~p"/suppliers"}>
+              Suppliers
+            </UISidebar.sidebar_item>
+            <UISidebar.sidebar_item navigate={~p"/items"} active={@current_page == ~p"/items"}>
+              Items
+            </UISidebar.sidebar_item>
+            <UISidebar.sidebar_item :if={admin?(@current_user)} navigate={~p"/materials"} active={@current_page == ~p"/materials"}>
+              Materials
+            </UISidebar.sidebar_item>
+          </UISidebar.sidebar_section>
+        </:nav_items>
+        <:footer_items>
+          <UISidebar.sidebar_item :if={admin?(@current_user)} navigate={~p"/admin"} active={@current_page == ~p"/admin"}>
+            Admin
+          </UISidebar.sidebar_item>
+        </:footer_items>
+      </UISidebar.sidebar>
 
       <!-- Main Content Area -->
-      <div class="flex-1 flex flex-col min-w-0">
+      <div class="flex-1 flex flex-col min-w-0 bg-background">
         <!-- Top Header -->
-        <header class="navbar bg-base-100 border-b border-base-300 px-4 sm:px-6 lg:px-8 h-16 shrink-0">
-          <div class="flex-1 items-center gap-4">
-            <!-- Mobile menu button -->
-            <button
-              id="mobile-sidebar-toggle"
-              type="button"
-              class="btn btn-ghost btn-sm btn-circle lg:hidden"
-              phx-hook="Sidebar"
-              data-sidebar-selector="#admin-sidebar"
-              aria-label="Toggle sidebar"
-            >
-              <.icon name="hero-bars-3" class="w-5 h-5" />
-            </button>
-
+        <header class="border-b border-sidebar-border bg-background px-4 sm:px-6 lg:px-8 h-16 shrink-0 flex items-center justify-between">
+          <div class="flex items-center gap-4">
             <.link href="/" class="flex items-center gap-2 text-sm font-semibold hover:no-underline">
               <img src={~p"/images/logo.svg"} width="24" />
               <span class="hidden sm:inline">v{Application.spec(:phoenix, :vsn)}</span>
             </.link>
           </div>
 
-          <div class="flex-none items-center gap-2">
-            <ul class="flex items-center px-1 space-x-2">
-              <li>
-                <.theme_toggle />
-              </li>
-              <li>
-                <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary btn-sm">
-                  Get Started <span aria-hidden="true">&rarr;</span>
-                </a>
-              </li>
-            </ul>
+          <div class="flex items-center gap-4">
+            <.theme_toggle />
           </div>
         </header>
 
@@ -186,9 +120,9 @@ defmodule AshcrudWeb.Layouts do
           </div>
         </main>
       </div>
-      </div>
+    </div>
 
-      <.flash_group flash={@flash} />
+    <.flash_group flash={@flash} />
     """
   end
 
@@ -205,7 +139,7 @@ defmodule AshcrudWeb.Layouts do
   # Allow arbitrary attrs (like phx-click) to be passed to the link
   attr :rest, :global, doc: "Additional HTML attributes for the link"
 
-  def sidebar_item(assigns) do
+  def phia_sidebar_item(assigns) do
     ~H"""
     <li>
       <.link
@@ -282,45 +216,55 @@ defmodule AshcrudWeb.Layouts do
   """
   def theme_toggle(assigns) do
     ~H"""
-    <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
-      <div class="absolute w-1/4 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/4 [[data-theme=dark]_&]:left-2/4 [[data-theme=midnight-purple]_&]:left-3/4 transition-[left]" />
-
-      <button
-        class="flex p-2 cursor-pointer w-1/4"
+    <div class="flex items-center gap-1 p-1 bg-base-200 rounded-lg">
+      <PhiaButton.button
+        variant={:ghost}
+        size={:sm}
+        class="p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
+        aria-label="System theme"
       >
-        <.icon name="hero-computer-desktop-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
+        <.icon name="hero-computer-desktop" class="w-4 h-4" />
+      </PhiaButton.button>
 
-      <button
-        class="flex p-2 cursor-pointer w-1/4"
+      <PhiaButton.button
+        variant={:ghost}
+        size={:sm}
+        class="p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
+        aria-label="Light theme"
       >
-        <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
+        <.icon name="hero-sun" class="w-4 h-4" />
+      </PhiaButton.button>
 
-      <button
-        class="flex p-2 cursor-pointer w-1/4"
+      <PhiaButton.button
+        variant={:ghost}
+        size={:sm}
+        class="p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
+        aria-label="Dark theme"
       >
-        <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
+        <.icon name="hero-moon" class="w-4 h-4" />
+      </PhiaButton.button>
 
-      <button
-        class="flex p-2 cursor-pointer w-1/4"
+      <PhiaButton.button
+        variant={:ghost}
+        size={:sm}
+        class="p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="midnight-purple"
+        aria-label="Midnight purple theme"
       >
-        <.icon name="hero-stop-circle-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </button>
+        <.icon name="hero-sparkles" class="w-4 h-4" />
+      </PhiaButton.button>
     </div>
     """
   end
 
-   # Helper to check admin role
-  defp is_admin?(%{role: :admin}), do: true
-  defp is_admin?(_), do: false
+  defp admin?(current_user) do
+    current_user && current_user.role == :admin
+  end
 end

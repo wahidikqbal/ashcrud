@@ -28,7 +28,6 @@ defmodule AshcrudWeb.LiveUserAuth do
             socket =
               socket
               |> Phoenix.LiveView.put_flash(:error, "Sesi tidak valid, silakan login kembali")
-              |> Phoenix.LiveView.clear_session()
 
             {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/sign-in")}
         end

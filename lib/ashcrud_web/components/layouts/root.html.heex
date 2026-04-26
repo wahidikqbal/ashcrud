@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      (() => {
+        const t = localStorage.getItem('phx:theme');
+        const isDark = t === 'dark' || t === 'midnight-purple' || (!t && matchMedia('(prefers-color-scheme: dark)').matches);
+        const theme = t || (isDark ? 'dark' : 'light');
+        
+        if (theme === 'dark' || theme === 'midnight-purple') {
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <%= Application.get_env(:live_debugger, :live_debugger_tags) %>
 
     <meta charset="utf-8" />
