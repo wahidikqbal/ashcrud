@@ -27,6 +27,137 @@ import { hooks as colocatedHooks } from "phoenix-colocated/ashcrud";
 import topbar from "../vendor/topbar";
 import MishkaComponents from "../vendor/mishka_components.js";
 import Sidebar from "../vendor/sidebar.js";
+
+// Sidebar toggle functions exposed globally for direct onclick access
+window.SidebarToggle = {
+  toggleMinimize: function() {
+    const currentState = localStorage.getItem('sidebar_minimized') === 'true';
+    const newState = !currentState;
+    localStorage.setItem('sidebar_minimized', newState);
+    this.applyStateDirect(newState, localStorage.getItem('sidebar_mobile_open') === 'true');
+    document.dispatchEvent(new CustomEvent('sidebar:state-changed', { detail: { minimized: newState, mobileOpen: localStorage.getItem('sidebar_mobile_open') === 'true' } }));
+  },
+  
+  toggleMobile: function() {
+    const currentState = localStorage.getItem('sidebar_mobile_open') === 'true';
+    const newState = !currentState;
+    localStorage.setItem('sidebar_mobile_open', newState);
+    this.applyStateDirect(localStorage.getItem('sidebar_minimized') === 'true', newState);
+    document.dispatchEvent(new CustomEvent('sidebar:state-changed', { detail: { minimized: localStorage.getItem('sidebar_minimized') === 'true', mobileOpen: newState } }));
+  },
+  
+  navigateAndClose: function(url) {
+    this.closeMobile();
+    window.location.href = url;
+  },
+  
+  closeMobile: function() {
+    localStorage.setItem('sidebar_mobile_open', 'false');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (backdrop) backdrop.remove();
+    this.applyStateDirect(localStorage.getItem('sidebar_minimized') === 'true', false);
+    document.dispatchEvent(new CustomEvent('sidebar:state-changed', { detail: { minimized: localStorage.getItem('sidebar_minimized') === 'true', mobileOpen: false } }));
+  },
+  
+  applyStateDirect: function(minimized, mobileOpen) {
+    const sidebar = document.getElementById('sidebar-drawer');
+    if (!sidebar) return;
+    
+    const isMobile = window.innerWidth < 768;
+    
+    // Apply minimized state (desktop only)
+    if (!isMobile) {
+      if (minimized) {
+        sidebar.classList.remove('w-60');
+        sidebar.classList.add('w-16');
+        // Hide text labels
+        document.querySelectorAll('.sidebar-label').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.sidebar-section-label').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.sidebar-brand-text').forEach(el => el.classList.add('hidden'));
+      } else {
+        sidebar.classList.remove('w-16');
+        sidebar.classList.add('w-60');
+        // Show text labels
+        document.querySelectorAll('.sidebar-label').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.sidebar-section-label').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.sidebar-brand-text').forEach(el => el.classList.remove('hidden'));
+      }
+    }
+    
+    // Mobile overlay handling
+    if (isMobile) {
+      if (mobileOpen) {
+        sidebar.classList.remove('hidden');
+        sidebar.classList.add('fixed', 'inset-0', 'z-50', 'w-60');
+      } else {
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('fixed', 'inset-0', 'z-50');
+      }
+    }
+    
+    // Mobile backdrop
+    let backdrop = document.getElementById('sidebar-backdrop');
+    if (isMobile && mobileOpen) {
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'sidebar-backdrop';
+        backdrop.className = 'fixed inset-0 z-40 bg-black/50';
+        backdrop.addEventListener('click', () => {
+          window.SidebarToggle.closeMobile();
+        });
+        document.body.appendChild(backdrop);
+      }
+      backdrop.classList.remove('hidden');
+    } else if (backdrop) {
+      backdrop.remove();
+    }
+    
+    // Update hamburger button icon
+    const mobileBtn = document.querySelector('[data-sidebar-mobile-btn]');
+    if (mobileBtn) {
+      const icon = mobileBtn.querySelector('svg');
+      if (icon) {
+        icon.setAttribute('name', mobileOpen ? 'hero-x-mark' : 'hero-bars-3');
+      }
+      mobileBtn.setAttribute('aria-label', mobileOpen ? 'Close sidebar' : 'Open sidebar');
+    }
+  }
+};
+
+// Apply initial state immediately on page load
+(function() {
+  const storedMinimized = localStorage.getItem('sidebar_minimized');
+  const storedMobileOpen = localStorage.getItem('sidebar_mobile_open');
+  const minimized = storedMinimized === 'true';
+  const mobileOpen = storedMobileOpen === 'true';
+  
+  // Apply initial state immediately
+  window.SidebarToggle.applyStateDirect(minimized, mobileOpen);
+})();
+
+const SidebarManager = {
+  mounted() {
+    // Listen for state changes
+    document.addEventListener('sidebar:state-changed', (e) => {
+      window.SidebarToggle.applyStateDirect(e.detail.minimized, e.detail.mobileOpen);
+    });
+    
+    // Auto-minimize on resize to desktop
+    this.handleResize = () => {
+      if (window.innerWidth >= 768) {
+        localStorage.setItem('sidebar_mobile_open', 'false');
+        const currentMinimized = localStorage.getItem('sidebar_minimized') === 'true';
+        window.SidebarToggle.applyStateDirect(currentMinimized, false);
+      }
+    };
+    window.addEventListener('resize', this.handleResize);
+  },
+  
+  destroyed() {
+    window.removeEventListener('resize', this.handleResize);
+  }
+};
+
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -39,6 +170,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ...colocatedHooks,
     ...MishkaComponents,
     Sidebar,
+    SidebarManager,
   },
 });
 // Show progress bar on live navigation and form submits
@@ -47,15 +179,30 @@ topbar.config({
     0: "#29d",
   },
   shadowColor: "rgba(0, 0, 0, .3)",
+  // Make topbar appear faster on mobile for better UX
+  clientBarSpeed: window.innerWidth < 768 ? 100 : 300,
+  barTopSpeed: 200,
+  barBottomSpeed: 200,
 });
 window.addEventListener("phx:page-loading-start", (_info) => {
   topbar.show(300);
-  // Auto-close mobile sidebar on navigation
-  if (window.innerWidth < 1024) {
-    const sidebar = document.getElementById("admin-sidebar");
+  // Auto-close mobile sidebar on navigation - instant close for faster UX
+  if (window.innerWidth < 768) {
+    // Immediately remove backdrop and hide sidebar (no animation for speed)
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (backdrop) backdrop.remove();
+    localStorage.setItem('sidebar_mobile_open', 'false');
+    const sidebar = document.getElementById('sidebar-drawer');
     if (sidebar) {
-      sidebar.classList.remove("translate-x-0", "opacity-100");
-      sidebar.classList.add("-translate-x-full", "opacity-0");
+      sidebar.classList.add('hidden');
+      sidebar.classList.remove('fixed', 'inset-0', 'z-50');
+    }
+    // Reset hamburger icon immediately
+    const mobileBtn = document.querySelector('[data-sidebar-mobile-btn]');
+    if (mobileBtn) {
+      const icon = mobileBtn.querySelector('svg');
+      if (icon) icon.setAttribute('name', 'hero-bars-3');
+      mobileBtn.setAttribute('aria-label', 'Open sidebar');
     }
   }
 });

@@ -30,6 +30,7 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
   use Phoenix.Component
 
   import AshcrudWeb.ClassMerger, only: [cn: 1]
+  import AshcrudWeb.Components.Icon
 
   # ---------------------------------------------------------------------------
   # sidebar/1
@@ -48,6 +49,28 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
     doc: """
     When `true`, translates the sidebar off-screen via `-translate-x-full`.
     Useful for programmatic collapse without the mobile overlay pattern.
+    """
+  )
+
+  attr(:minimized, :boolean,
+    default: false,
+    doc: """
+    When `true`, sidebar becomes icon-only (w-16) instead of full width (w-60).
+    Used for desktop minimize/expand functionality.
+    """
+  )
+
+  attr(:mobile_open, :boolean,
+    default: false,
+    doc: """
+    When `true`, shows the sidebar as an overlay on mobile.
+    """
+  )
+
+  attr(:toggleable, :boolean,
+    default: true,
+    doc: """
+    When `true`, shows the toggle button in the brand area.
     """
   )
 
@@ -140,20 +163,42 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
     <aside
       id={@id}
       class={cn([
-        "flex w-60 flex-col border-r border-sidebar-border bg-background text-foreground",
+        "flex flex-col border-r border-sidebar-border bg-background text-foreground",
+        "md:transition-all md:duration-300 md:ease-in-out",
+        @minimized && "w-16" || "w-60",
         sidebar_variant_class(@variant),
         @collapsed && "-translate-x-full",
+        @mobile_open && "fixed inset-0 z-50 w-60 md:relative md:translate-x-0",
+        !@mobile_open && "hidden md:flex",
         @class
       ])}
+      phx-hook="SidebarManager"
       {@rest}
     >
       <%= if @brand != [] do %>
         <%!-- h-14 matches the topbar height so the horizontal grid lines align perfectly --%>
-        <div class="flex h-14 shrink-0 items-center border-b px-4">
-          <%= render_slot(@brand) %>
+        <div class={[
+          "flex h-14 shrink-0 items-center border-b border-sidebar-border relative",
+          @minimized && "justify-center px-2"
+        ]}>
+          <div class={["flex items-center gap-2", @minimized && "flex-col"]}>
+            <%= render_slot(@brand) %>
+          </div>
+          <button
+            type="button"
+            class="hidden md:flex absolute top-1/2 -translate-y-1/2 -right-3 items-center justify-center p-1 rounded-md hover:bg-sidebar-accent bg-background border border-sidebar-border shadow-sm"
+            data-sidebar-toggle-btn
+            onclick="SidebarToggle.toggleMinimize()"
+            aria-label={if @minimized, do: "Expand sidebar", else: "Minimize sidebar"}
+          >
+            <.icon name={if @minimized, do: "hero-chevron-right", else: "hero-chevron-left"} class="w-4 h-4" />
+          </button>
         </div>
       <% end %>
-      <nav class="flex-1 overflow-y-auto px-2 py-4">
+      <nav class={[
+        "flex-1 overflow-y-auto px-2 py-4",
+        @minimized && "px-1"
+      ]}>
         <%= if @nav_items != [] do %>
           <%= render_slot(@nav_items) %>
         <% else %>
@@ -162,7 +207,10 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
         <% end %>
       </nav>
       <%= if @footer_items != [] do %>
-        <div class="shrink-0 border-t border-sidebar-border px-2 py-4">
+        <div class={[
+          "shrink-0 border-t border-sidebar-border px-2 py-4",
+          @minimized && "px-1"
+        ]}>
           <%= render_slot(@footer_items) %>
         </div>
       <% end %>
@@ -183,6 +231,11 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
     `bg-accent text-accent-foreground` when `true`. Typically derived from
     `@live_action == :route_name` in your LiveView.
     """
+  )
+
+  attr(:minimized, :boolean,
+    default: false,
+    doc: "When true, hides the label text (icon-only mode)"
   )
 
   attr(:badge, :integer,
@@ -244,7 +297,7 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
       <span :if={@icon != []} class="shrink-0">
         <%= render_slot(@icon) %>
       </span>
-      <span class="flex-1"><%= render_slot(@inner_block) %></span>
+      <span class={["flex-1 sidebar-label", @minimized && "hidden"]}><%= render_slot(@inner_block) %></span>
       <span
         :if={@badge}
         class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-xs font-medium text-white"
@@ -269,6 +322,7 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
   )
 
   attr(:class, :string, default: nil, doc: "Additional CSS classes for the section wrapper")
+  attr(:minimized, :boolean, default: false, doc: "When true, hides the section label")
   attr(:rest, :global)
 
   slot(:inner_block, required: true, doc: "sidebar_item/1 components to group under this section")
@@ -296,8 +350,8 @@ defmodule AshcrudWeb.Components.PhiaSidebar do
     ~H"""
     <div class={cn(["mb-4", @class])} {@rest}>
       <p
-        :if={@label}
-        class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500"
+        :if={@label && !@minimized}
+        class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 sidebar-section-label"
       >
         <%= @label %>
       </p>

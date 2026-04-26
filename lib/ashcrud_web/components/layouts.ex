@@ -51,6 +51,10 @@ defmodule AshcrudWeb.Layouts do
     default: false,
     doc: "whether the sidebar is in minimized state"
 
+  attr :sidebar_mobile_open, :boolean,
+    default: false,
+    doc: "whether the sidebar is open on mobile (overlay)"
+
   attr :sidebar_class, :string,
     default: "",
     doc: "additional CSS classes for the sidebar"
@@ -61,37 +65,49 @@ defmodule AshcrudWeb.Layouts do
     ~H"""
     <div class="flex h-screen bg-base-100 overflow-hidden">
       <!-- PhiaUI Sidebar -->
-      <UISidebar.sidebar variant={:default} collapsed={@sidebar_minimized}>
+      <UISidebar.sidebar 
+        variant={:default} 
+        minimized={@sidebar_minimized}
+        mobile_open={@sidebar_mobile_open}
+        toggleable={true}
+      >
         <:brand>
           <.link href="/" class="flex items-center gap-2 hover:no-underline">
             <img src={~p"/images/logo.svg"} width="32" height="32" alt="Logo" class="shrink-0" />
-            <span class="text-lg font-semibold truncate">Ashcrud</span>
+            <span class={["text-lg font-semibold truncate sidebar-brand-text", @sidebar_minimized && "hidden md:hidden"]}>Ashcrud</span>
           </.link>
         </:brand>
         <:nav_items>
-          <UISidebar.sidebar_section label="Main Menu">
-            <UISidebar.sidebar_item navigate={~p"/"} active={@current_page == ~p"/"}>
+          <UISidebar.sidebar_section minimized={@sidebar_minimized} label="Main Menu">
+            <UISidebar.sidebar_item minimized={@sidebar_minimized} navigate={~p"/"} active={@current_page == ~p"/"}>
+              <:icon><.icon name="hero-home" class="w-5 h-5" /></:icon>
               Dashboard
             </UISidebar.sidebar_item>
-            <UISidebar.sidebar_item navigate={~p"/posts"} active={@current_page == ~p"/posts"}>
+            <UISidebar.sidebar_item minimized={@sidebar_minimized} navigate={~p"/posts"} active={@current_page == ~p"/posts"}>
+              <:icon><.icon name="hero-document-text" class="w-5 h-5" /></:icon>
               Posts
             </UISidebar.sidebar_item>
-            <UISidebar.sidebar_item navigate={~p"/categories"} active={@current_page == ~p"/categories"}>
+            <UISidebar.sidebar_item minimized={@sidebar_minimized} navigate={~p"/categories"} active={@current_page == ~p"/categories"}>
+              <:icon><.icon name="hero-folder" class="w-5 h-5" /></:icon>
               Categories
             </UISidebar.sidebar_item>
-            <UISidebar.sidebar_item navigate={~p"/suppliers"} active={@current_page == ~p"/suppliers"}>
+            <UISidebar.sidebar_item minimized={@sidebar_minimized} navigate={~p"/suppliers"} active={@current_page == ~p"/suppliers"}>
+              <:icon><.icon name="hero-truck" class="w-5 h-5" /></:icon>
               Suppliers
             </UISidebar.sidebar_item>
-            <UISidebar.sidebar_item navigate={~p"/items"} active={@current_page == ~p"/items"}>
+            <UISidebar.sidebar_item minimized={@sidebar_minimized} navigate={~p"/items"} active={@current_page == ~p"/items"}>
+              <:icon><.icon name="hero-cube" class="w-5 h-5" /></:icon>
               Items
             </UISidebar.sidebar_item>
-            <UISidebar.sidebar_item :if={admin?(@current_user)} navigate={~p"/materials"} active={@current_page == ~p"/materials"}>
+            <UISidebar.sidebar_item :if={admin?(@current_user)} minimized={@sidebar_minimized} navigate={~p"/materials"} active={@current_page == ~p"/materials"}>
+              <:icon><.icon name="hero-beaker" class="w-5 h-5" /></:icon>
               Materials
             </UISidebar.sidebar_item>
           </UISidebar.sidebar_section>
         </:nav_items>
         <:footer_items>
-          <UISidebar.sidebar_item :if={admin?(@current_user)} navigate={~p"/admin"} active={@current_page == ~p"/admin"}>
+          <UISidebar.sidebar_item :if={admin?(@current_user)} minimized={@sidebar_minimized} navigate={~p"/admin"} active={@current_page == ~p"/admin"}>
+            <:icon><.icon name="hero-cog" class="w-5 h-5" /></:icon>
             Admin
           </UISidebar.sidebar_item>
         </:footer_items>
@@ -101,9 +117,20 @@ defmodule AshcrudWeb.Layouts do
       <div class="flex-1 flex flex-col min-w-0 bg-background">
         <!-- Top Header -->
         <header class="border-b border-sidebar-border bg-background px-4 sm:px-6 lg:px-8 h-16 shrink-0 flex items-center justify-between">
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <!-- Mobile hamburger button (only visible on mobile) -->
+            <button
+              type="button"
+              class="md:hidden p-2 rounded-md hover:bg-base-200"
+              data-sidebar-mobile-btn
+              onclick="SidebarToggle.toggleMobile()"
+              aria-label="Toggle sidebar"
+            >
+              <.icon name="hero-bars-3" class="w-6 h-6" />
+            </button>
+
             <.link href="/" class="flex items-center gap-2 text-sm font-semibold hover:no-underline">
-              <img src={~p"/images/logo.svg"} width="24" />
+              <img src={~p"/images/logo.svg"} width="24" class="hidden sm:block" />
               <span class="hidden sm:inline">v{Application.spec(:phoenix, :vsn)}</span>
             </.link>
           </div>
