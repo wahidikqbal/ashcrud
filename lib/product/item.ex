@@ -36,7 +36,7 @@ defmodule Product.Item do
          default []
        end
 
-       change manage_relationship(:suppliers, :suppliers,
+       change manage_relationship(:suppliers, :suppliers, # untuk mengelola relasi dengan supplier saat create
          type: :append_and_remove,
          on_no_match: :match,
          on_match: :ignore,
@@ -47,18 +47,18 @@ defmodule Product.Item do
      update :update do
        accept [:name, :code, :material_id]
        primary? true
-       require_atomic? false  # ✅ tambahkan ini
+       require_atomic? false  # ✅ tambahkan ini untuk memungkinkan perubahan relasi tanpa harus memuat seluruh item
 
        argument :suppliers, {:array, :map} do
          allow_nil? true
          default []
        end
 
-       change manage_relationship(:suppliers, :suppliers,
-         type: :append_and_remove,
-         on_no_match: :match,
-         on_match: :ignore,
-         authorize?: false
+       change manage_relationship(:suppliers, :suppliers, # untuk mengelola relasi dengan supplier saat update
+         type: :append_and_remove, # gunakan append untuk menambahkan relasi baru dan remove untuk menghapus relasi yang tidak ada di input
+         on_no_match: :match, # jika supplier di input tidak ada di database, maka akan dicari berdasarkan id untuk di match dengan data yang sudah ada
+         on_match: :ignore, # jika supplier di input sudah ada di database, maka akan diabaikan (tidak diubah)
+         authorize?: false # karena kita sudah mengatur policy di level resource, jadi kita tidak perlu mengatur authorize? di manage_relationship (jika di set true, maka akan memeriksa policy lagi untuk setiap supplier yang di input, yang akan membuat performa menjadi buruk
        )
      end
   end
